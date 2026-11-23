@@ -51,6 +51,44 @@
     return out;
   };
 
+  /* ============================================================
+     مقاس الطباعة جوّه ملف الصورة نفسه (pHYs)
+     عشان الصورة تتطبع A4 بالملّي لما تختار «الحجم الفعلي»
+     ============================================================ */
+  var CRC = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) c = CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  window.pngWithDpi = function (pngB64, dpi) {
+    var png = b64ToBytes(pngB64);
+    var ppm = Math.round(dpi / 0.0254);
+    var chunk = new Uint8Array(21);
+    var v = new DataView(chunk.buffer);
+    v.setUint32(0, 9);
+    chunk.set([0x70, 0x48, 0x59, 0x73], 4);      // pHYs
+    v.setUint32(8, ppm);
+    v.setUint32(12, ppm);
+    chunk[16] = 1;                               // الوحدة: متر
+    v.setUint32(17, crc32(chunk.subarray(4, 17)));
+    // بعد التوقيع (8) والـ IHDR (25)
+    var out = new Uint8Array(png.length + 21);
+    out.set(png.subarray(0, 33), 0);
+    out.set(chunk, 33);
+    out.set(png.subarray(33), 54);
+    return window.bytesToB64(out);
+  };
+
   window.bytesToB64 = function (bytes) {
     var s = '', step = 0x8000;
     for (var i = 0; i < bytes.length; i += step) {

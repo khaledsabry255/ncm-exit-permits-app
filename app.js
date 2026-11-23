@@ -101,7 +101,7 @@
       unloadPlace: f.unloadPlace,
       purpose: f.purpose,
       items: clone(f.items),
-      driver: clone(f.driver)
+      driver: clone(fixedDriver(f))
     };
     state.rows = 1; // التصريح العام بيبدأ بصنف واحد
     document.body.style.setProperty('--c', f.color);
@@ -150,14 +150,51 @@
         field('رقم المركبة', 'driver.tractor', dr.tractor) +
         field('رقم المقطورة', 'driver.trailer', dr.trailer) +
       '</div>' +
-      field('تليفون السائق', 'driver.phone', dr.phone, { mode: 'tel', ltr: true }),
+      field('تليفون السائق', 'driver.phone', dr.phone, { mode: 'tel', ltr: true }) +
+      (state.form.fixed ?
+        '<button type="button" class="addrow savefixed" id="btn-save-fixed"' +
+        (sameDriver(dr, fixedDriver(state.form)) ? ' hidden' : '') + '>' +
+        '<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>حفظ كسائق ثابت</button>' : ''),
       delay);
+  }
+
+  /* ============================================================
+     السواقين الثابتين: الأصلي جوّه الـ APK (drivers.js)
+     ولو اتغيّر من التطبيق بيتحفظ على الموبايل ويبقى هو الثابت
+     ============================================================ */
+  var LS_FIXED = 'exitpermit.fixed.';
+  var DRIVER_KEYS = ['name', 'id', 'brand', 'color', 'tractor', 'trailer', 'phone'];
+
+  function fixedDriver(f) {
+    try {
+      var s = localStorage.getItem(LS_FIXED + f.id);
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return f.driver;
+  }
+  function sameDriver(a, b) {
+    return DRIVER_KEYS.every(function (k) { return String(a[k] || '').trim() === String(b[k] || '').trim(); });
+  }
+  function saveFixed() {
+    var d = {};
+    DRIVER_KEYS.forEach(function (k) { d[k] = toEn(String(state.data.driver[k] || '').trim()); });
+    try {
+      localStorage.setItem(LS_FIXED + state.form.id, JSON.stringify(d));
+    } catch (e) {
+      toast('مش قادر يحفظ');
+      return;
+    }
+    var b = $('btn-save-fixed');
+    if (b) b.hidden = true;
+    toast('بقى السائق الثابت لـ' + state.form.name);
   }
 
   function knownDrivers() {
     var seen = {}, list = [];
     window.FORMS.forEach(function (f) {
-      if (f.driver.name && !seen[f.driver.name]) { seen[f.driver.name] = 1; list.push(f.driver); }
+      [fixedDriver(f), f.driver].forEach(function (dr) {
+        if (dr.name && !seen[dr.name]) { seen[dr.name] = 1; list.push(dr); }
+      });
     });
     return list;
   }
@@ -251,6 +288,11 @@
     window.scrollTo(0, y);
   }
 
+  function refreshSaveFixed() {
+    var b = $('btn-save-fixed');
+    if (b) b.hidden = sameDriver(state.data.driver, fixedDriver(state.form));
+  }
+
   function setPath(obj, path, val) {
     var p = path.split('.'), o = obj;
     for (var i = 0; i < p.length - 1; i++) o = o[p[i]];
@@ -273,6 +315,7 @@
         if (inp.type === 'date') {
           inp.parentNode.querySelector('.dv').textContent = fmtDate(inp.value);
         }
+        if (inp.getAttribute('data-k').indexOf('driver.') === 0) refreshSaveFixed();
       });
       inp.addEventListener('change', function () {
         if (inp.type === 'date') inp.parentNode.querySelector('.dv').textContent = fmtDate(inp.value);
@@ -296,7 +339,12 @@
         var box = el.form.querySelector('[data-k="driver.' + k + '"]');
         if (box) box.value = hit[k];
       });
+      refreshSaveFixed();
     });
+
+    // زرار «حفظ كسائق ثابت» بيظهر بس لما بيانات السائق تختلف عن الثابت
+    var sf = $('btn-save-fixed');
+    if (sf) sf.addEventListener('click', saveFixed);
 
     var add = document.getElementById('btn-add-row');
     if (add) add.addEventListener('click', addRow);
@@ -393,7 +441,8 @@
       try {
         var c = state.canvas;
         if (kind === 'png') {
-          deliver(c.toDataURL('image/png').split(',')[1], fileName('png'), 'image/png');
+          var dpi = window.TEMPLATES[state.form.id].dpi || 400;
+          deliver(window.pngWithDpi(c.toDataURL('image/png').split(',')[1], dpi), fileName('png'), 'image/png');
         } else if (window.AndroidBridge && window.AndroidBridge.savePdf) {
           // الموبايل بيعمل الـ PDF من الصورة نفسها من غير أي ضغط يبوّظها
           window.AndroidBridge.savePdf(c.toDataURL('image/png').split(',')[1], fileName('pdf'));
