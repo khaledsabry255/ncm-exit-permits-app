@@ -406,9 +406,12 @@ main { max-width: 640px; margin: 0 auto; }
 .addrow:active { transform: scale(.98); }
 .savefixed { margin-top: 2px; animation: rise .3s ease both; }
 
+/* اختيار «بدون عودة / عودة» — أزرق متوسط */
 .seg {
+  --seg: #1e88e5;
   display: flex;
-  background: var(--field);
+  background: #e8f1fc;
+  border: 1.5px solid #cfe1f8;
   border-radius: 13px;
   padding: 4px;
   gap: 4px;
@@ -422,12 +425,12 @@ main { max-width: 640px; margin: 0 auto; }
   font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
-  color: var(--muted);
+  color: var(--seg);
   cursor: pointer;
   transition: background .15s ease, color .15s ease, transform .12s ease;
 }
 .seg button:active { transform: scale(.95); }
-.seg button.on { background: #fff; color: var(--c, var(--brand)); box-shadow: 0 1px 4px rgba(16, 40, 72, .12); }
+.seg button.on { background: var(--seg); color: #fff; box-shadow: 0 4px 10px -4px var(--seg); }
 
 .reveal { display: none; }
 .reveal.on { display: block; animation: rise .3s ease both; }

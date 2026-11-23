@@ -283,7 +283,7 @@
             '</div></div>' +
           '</div>' +
           '<div class="reveal' + (it.mode === 'return' ? ' on' : '') + '" data-ret="' + i + '">' +
-            field('تاريخ العودة', 'items.' + i + '.retDate', it.retDate, { type: 'date' }) +
+            field('تاريخ العودة', 'items.' + i + '.retDate', it.retDate) +
           '</div>' +
           field('ملاحظة', 'items.' + i + '.note', it.note) +
           '</div>';
@@ -427,12 +427,12 @@
     }
     var items = d.items.map(function (it) {
       if (f.fixed) return it;
-      var rd = splitISO(it.retDate);
       return {
         desc: it.desc, qty: it.qty, note: it.note,
         noReturn: it.mode === 'noreturn' ? 'بدون عودة' : '',
         ret: it.mode === 'return' ? 'عودة' : '',
-        retDate: it.mode === 'return' && rd ? rd.d + ' / ' + rd.m + ' / ' + rd.y : ''
+        // تاريخ العودة بيتكتب زي ما هو (تاريخ أو أي كلام)
+        retDate: it.mode === 'return' ? String(it.retDate || '').trim() : ''
       };
     });
     return enDeep({
