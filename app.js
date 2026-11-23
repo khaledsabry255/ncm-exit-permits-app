@@ -86,15 +86,14 @@
         '<span class="tt"><span class="k">' + label + '</span><span class="n">' + f.short + '</span></span>' +
         '</button>';
     }
-    var h = '<div class="hero rise"><img src="logo.png" alt="NCM">' +
-      '<span class="hr"></span><span class="appname">تصاريح الخروج</span></div>';
-    h += '<h2 class="sect-h rise" style="animation-delay:' + (n++ * 70) + 'ms">التصاريح</h2>';
-    h += '<div class="grid">';
+    var h = '<div class="hero rise"><img src="logo.png" alt="NCM"></div>';
+    h += '<h2 class="sect-h rise" style="animation-delay:' + (n++ * 70) + 'ms">تصاريح الخروج</h2>';
+    h += '<div class="grid permits">';
     permits.forEach(function (f) { h += tile(f, 'تصريح خروج'); });
     h += '</div>';
     if (decls.length) {
       h += '<h2 class="sect-h rise" style="animation-delay:' + (n * 70) + 'ms">الإقرارات</h2>';
-      h += '<div class="grid">';
+      h += '<div class="grid decls">';
       decls.forEach(function (f) { h += tile(f, 'إقرار تصريح خروج', true); });
       h += '</div>';
     }

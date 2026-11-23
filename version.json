@@ -1,8 +1,8 @@
 {
- "version": 6,
+ "version": 7,
  "files": {
-  "app.css": "f27e678c6d319eb20fe58f6aa808e0c696ecf8be0fe02e14845e0d0dafa1bc9a",
-  "app.js": "c890a9efd6661a6badc5a49cebf4bb948f2b29347f5f58b3813135e9a1dcb206",
+  "app.css": "bb731ad2506f1d8f81c4782fa3997998e347522f6263c1a7757467f750e4bc93",
+  "app.js": "fbd10c5b81f42cde43bb2724a198e9114321931a3c38f43548463e2345622519",
   "bg/general.png": "755aab2fea9f851a1e0afbd73e43db08a79eca05846dc6517a510b2a47504229",
   "bg/general1.png": "fcda9db2a8882ce0d87f614a44dd914e4c03540840d63ec785a1e8b4d82a2455",
   "bg/general2.png": "2ce759d9930c898643774c89b5934714410c22ad86c7776f6169dbcca25ab198",
