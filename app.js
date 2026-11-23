@@ -460,9 +460,19 @@
     window.renderPermit(id, sheetData()).then(function (c) {
       if (state.screen !== 'preview' || state.form.id !== formId) return;
       state.sheetId = id;
-      state.canvas = c;
+      state.canvas = c;            // النسخة الكاملة (400 dpi) — دي اللي بتتحفظ
+      // نسخة للعرض بس: الورقة الكاملة أعرض من اللي كارت الشاشة في موبايلات كتير
+      // يقدر يعرضه مرة واحدة ، فالزوم كان بيقف. دي 2400 بكسل وكفاية جداً للتكبير
+      var k = Math.min(1, 2400 / c.width);
+      var pv = document.createElement('canvas');
+      pv.width = Math.round(c.width * k);
+      pv.height = Math.round(c.height * k);
+      var px = pv.getContext('2d');
+      px.imageSmoothingEnabled = true;
+      px.imageSmoothingQuality = 'high';
+      px.drawImage(c, 0, 0, pv.width, pv.height);
       el.wrap.innerHTML = '';
-      el.wrap.appendChild(c);
+      el.wrap.appendChild(pv);
       el.wrap.classList.add('rise');
     }).catch(function () {
       el.wrap.innerHTML = '';
@@ -470,8 +480,21 @@
     });
   }
 
-  el.wrap.addEventListener('click', function () {
-    if (state.canvas) el.wrap.classList.toggle('zoom');
+  /* لمسة على الورقة = تكبير عند المكان اللي لمسته ، ولمسة تانية ترجّعها */
+  el.wrap.addEventListener('click', function (e) {
+    var cv = el.wrap.querySelector('canvas');
+    if (!state.canvas || !cv) return;
+    if (el.wrap.classList.contains('zoom')) {
+      el.wrap.classList.remove('zoom');
+      el.wrap.scrollLeft = 0;
+      return;
+    }
+    var r = cv.getBoundingClientRect();
+    var rx = (e.clientX - r.left) / r.width, ry = (e.clientY - r.top) / r.height;
+    el.wrap.classList.add('zoom');
+    var r2 = cv.getBoundingClientRect();
+    el.wrap.scrollLeft = Math.max(0, rx * r2.width - el.wrap.clientWidth / 2);
+    window.scrollTo(0, Math.max(0, window.scrollY + r2.top + ry * r2.height - window.innerHeight / 2));
   });
 
   function fileName(ext) {

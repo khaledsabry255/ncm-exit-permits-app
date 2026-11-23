@@ -439,10 +439,11 @@ main { max-width: 640px; margin: 0 auto; }
   box-shadow: var(--shadow);
   overflow: auto;
   min-height: 200px;
+  direction: ltr;               /* عشان التمرير يمين وشمال يبقى طبيعي وهي متكبّرة */
   -webkit-overflow-scrolling: touch;
 }
 .sheet-wrap canvas { display: block; width: 100%; height: auto; }
-.sheet-wrap.zoom canvas { width: 250%; }
+.sheet-wrap.zoom canvas { width: 250%; max-width: none; }
 .loading {
   display: grid;
   place-items: center;
