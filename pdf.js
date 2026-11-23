@@ -12,9 +12,34 @@
   }
 
   /* jpegB64 : الصورة JPEG كـ base64 ، w/h : أبعادها بالبكسل */
-  window.makePdf = function (jpegB64, w, h) {
-    var jpg = b64ToBytes(jpegB64);
-    var PW = 841.89, PH = 595.28; // A4 أفقي بالنقاط
+  window.makePdf = function (jpegB64, w, h, pw, ph) {
+    return buildPdf(b64ToBytes(jpegB64), '/DCTDecode', w, h, pw || 841.89, ph || 595.28);
+  };
+
+  /* PDF من غير أي فقد في الجودة: البكسلات نفسها مضغوطة Flate (زي الـ PNG)
+     pw/ph : مقاس الصفحة بالنقاط (نفس مقاس ورقة الورد) */
+  window.makePdfLossless = function (canvas, pw, ph) {
+    var w = canvas.width, h = canvas.height;
+    if (typeof CompressionStream === 'undefined') {
+      var jpg = canvas.toDataURL('image/jpeg', 1.0).split(',')[1];
+      return Promise.resolve(window.makePdf(jpg, w, h, pw, ph));
+    }
+    var px = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+    var rgb = new Uint8Array(w * h * 3);
+    for (var i = 0, j = 0; i < px.length; i += 4) {
+      rgb[j++] = px[i]; rgb[j++] = px[i + 1]; rgb[j++] = px[i + 2];
+    }
+    px = null;
+    var stream = new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'));
+    return new Response(stream).arrayBuffer().then(function (buf) {
+      return buildPdf(new Uint8Array(buf), '/FlateDecode', w, h, pw, ph);
+    });
+  };
+
+  function buildPdf(img, filter, w, h, PW, PH) {
+    PW = Math.round(PW * 100) / 100;
+    PH = Math.round(PH * 100) / 100;
+    var jpg = img;
     var chunks = [], size = 0, offsets = [];
 
     function str(s) {
@@ -33,7 +58,7 @@
 
     offsets[4] = size;
     push('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + w + ' /Height ' + h +
-      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter ' + filter + ' /Length ' + jpg.length + ' >>\nstream\n');
     push(jpg);
     push('\nendstream\nendobj\n');
 
@@ -49,7 +74,7 @@
     var out = new Uint8Array(size), pos = 0;
     chunks.forEach(function (c) { out.set(c, pos); pos += c.length; });
     return out;
-  };
+  }
 
   /* ============================================================
      مقاس الطباعة جوّه ملف الصورة نفسه (pHYs)

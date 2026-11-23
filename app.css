@@ -122,6 +122,24 @@ main { max-width: 640px; margin: 0 auto; }
   opacity: .07;
 }
 .tile:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(16, 32, 52, .1); }
+.tile.wide { aspect-ratio: auto; min-height: 150px; }
+.tile.wide .n { font-size: 20px; line-height: 1.3; }
+.sect-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 26px 4px 12px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.sect-h::before {
+  content: '';
+  width: 6px;
+  height: 20px;
+  border-radius: 3px;
+  background: #6c7885;
+}
 .tile .ico {
   width: 54px;
   height: 54px;

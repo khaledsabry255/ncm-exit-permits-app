@@ -23,7 +23,9 @@
     doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
     truck: '<path d="M2 7h12v9H2zM14 10h4.5l3.5 3.5V16h-8z"/><circle cx="6.5" cy="17.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/>',
     drop: '<path d="M12 3s6.5 6.6 6.5 11.2a6.5 6.5 0 0 1-13 0C5.5 9.6 12 3 12 3z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
-    bin: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
+    bin: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    reject: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5a2.1 2.1 0 0 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>'
   };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -74,15 +76,25 @@
      الرئيسية
      ============================================================ */
   function renderHome() {
-    var h = '<div class="grid">';
-    window.FORMS.forEach(function (f, i) {
-      h += '<button class="tile rise" data-id="' + f.id + '" style="--c:' + f.color +
-        ';animation-delay:' + (i * 70) + 'ms">' +
+    var permits = window.FORMS.filter(function (f) { return f.kind !== 'decl'; });
+    var decls = window.FORMS.filter(function (f) { return f.kind === 'decl'; });
+    var n = 0;
+    function tile(f, label, wide) {
+      return '<button class="tile rise' + (wide ? ' wide' : '') + '" data-id="' + f.id + '" style="--c:' + f.color +
+        ';animation-delay:' + (n++ * 70) + 'ms">' +
         '<span class="ico"><svg viewBox="0 0 24 24">' + ICONS[f.icon] + '</svg></span>' +
-        '<span class="tt"><span class="k">تصريح خروج</span><span class="n">' + f.short + '</span></span>' +
+        '<span class="tt"><span class="k">' + label + '</span><span class="n">' + f.short + '</span></span>' +
         '</button>';
-    });
+    }
+    var h = '<div class="grid">';
+    permits.forEach(function (f) { h += tile(f, 'تصريح خروج'); });
     h += '</div>';
+    if (decls.length) {
+      h += '<h2 class="sect-h rise" style="animation-delay:' + (n * 70) + 'ms">الإقرارات</h2>';
+      h += '<div class="grid">';
+      decls.forEach(function (f) { h += tile(f, 'إقرار تصريح خروج', true); });
+      h += '</div>';
+    }
     el.home.innerHTML = h;
     Array.prototype.forEach.call(el.home.querySelectorAll('.tile'), function (b) {
       b.addEventListener('click', function () { openForm(b.getAttribute('data-id')); });
@@ -103,7 +115,7 @@
       items: clone(f.items),
       driver: clone(fixedDriver(f))
     };
-    state.rows = 1; // التصريح العام بيبدأ بصنف واحد
+    state.rows = 1; // التصريح العام والإقرارات بيبدأوا بصنف واحد
     document.body.style.setProperty('--c', f.color);
     renderForm();
     show('form');
@@ -200,10 +212,35 @@
   }
 
   /* quiet: من غير ما الصناديق تتحرك تاني (بعد إضافة/حذف صنف) ، newRow: الصف اللي لسه ضايفه */
+  function delBtn(i) {
+    return '<button type="button" class="item-del" data-del="' + i + '" aria-label="حذف">' +
+      '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+  }
+  function addBtn() {
+    return '<button type="button" class="addrow" id="btn-add-row">' +
+      '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>إضافة صنف</button>';
+  }
+
   function renderForm(quiet, newRow) {
     var f = state.form, d = state.data, h = '';
 
-    if (f.fixed) {
+    if (f.kind === 'decl') {
+      // الإقرار: التاريخ + الأصناف + السائق بس
+      h += card('الإقرار', field('التاريخ', 'date', d.date, { type: 'date' }), 0);
+      var its = '';
+      d.items.slice(0, state.rows).forEach(function (it, i) {
+        its += '<div class="item' + (i === newRow ? ' pop' : '') + '" data-item="' + i + '">' +
+          '<div class="item-top"><span class="item-no">' + (i + 1) + '</span>' + (i > 0 ? delBtn(i) : '') + '</div>' +
+          field('الصنف', 'items.' + i + '.desc', it.desc) +
+          '</div>';
+      });
+      if (state.rows < d.items.length) its += addBtn();
+      h += card('الأصناف', its, 70);
+      h += card('السائق',
+        field('اسم السائق', 'driver.name', d.driver.name, { list: 'drivers' }) +
+        field('الرقم القومي', 'driver.id', d.driver.id, { mode: 'numeric', ltr: true }) +
+        field('رقم السيارة', 'driver.car', d.driver.car), 140);
+    } else if (f.fixed) {
       h += card('التصريح',
         field('رقم التصريح', 'appNo', d.appNo, { mode: 'numeric', big: true }) +
         '<div class="row">' +
@@ -334,10 +371,13 @@
     if (nameInp) nameInp.addEventListener('change', function () {
       var hit = knownDrivers().filter(function (x) { return x.name === nameInp.value.trim(); })[0];
       if (!hit) return;
-      ['id', 'brand', 'color', 'tractor', 'phone'].forEach(function (k) {
-        state.data.driver[k] = hit[k];
+      // في الإقرار «رقم السيارة» = رقم المركبة بتاع السائق
+      var map = state.form.kind === 'decl' ? { id: 'id', car: 'tractor' } :
+        { id: 'id', brand: 'brand', color: 'color', tractor: 'tractor', phone: 'phone' };
+      Object.keys(map).forEach(function (k) {
+        state.data.driver[k] = hit[map[k]];
         var box = el.form.querySelector('[data-k="driver.' + k + '"]');
-        if (box) box.value = hit[k];
+        if (box) box.value = hit[map[k]];
       });
       refreshSaveFixed();
     });
@@ -372,6 +412,13 @@
      ============================================================ */
   function sheetData() {
     var f = state.form, d = state.data, dt = splitISO(d.date) || { d: '', m: '', y: '' };
+    if (f.kind === 'decl') {
+      return enDeep({
+        dateD: dt.d, dateM: dt.m, dateY: dt.y,
+        items: d.items.map(function (it) { return { desc: it.desc }; }),
+        driver: { name: d.driver.name, id: d.driver.id, car: d.driver.car }
+      });
+    }
     var items = d.items.map(function (it) {
       if (f.fixed) return it;
       var rd = splitISO(it.retDate);
@@ -437,24 +484,29 @@
     state.busy = true;
     var btn = $(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
     btn.disabled = true;
+    function done() { btn.disabled = false; state.busy = false; }
     setTimeout(function () {
       try {
-        var c = state.canvas;
+        var c = state.canvas, T = window.TEMPLATES[state.form.id];
+        var pt = T.pt || [841.89, 595.28];
+        var a4Landscape = Math.abs(pt[0] - 841.9) < 2 && Math.abs(pt[1] - 595.3) < 2;
         if (kind === 'png') {
-          var dpi = window.TEMPLATES[state.form.id].dpi || 400;
-          deliver(window.pngWithDpi(c.toDataURL('image/png').split(',')[1], dpi), fileName('png'), 'image/png');
-        } else if (window.AndroidBridge && window.AndroidBridge.savePdf) {
-          // الموبايل بيعمل الـ PDF من الصورة نفسها من غير أي ضغط يبوّظها
+          deliver(window.pngWithDpi(c.toDataURL('image/png').split(',')[1], T.dpi || 400), fileName('png'), 'image/png');
+        } else if (a4Landscape && window.AndroidBridge && window.AndroidBridge.savePdf) {
+          // التصاريح: الموبايل بيعمل الـ PDF من الصورة نفسها من غير أي ضغط
           window.AndroidBridge.savePdf(c.toDataURL('image/png').split(',')[1], fileName('pdf'));
         } else {
-          var jpg = c.toDataURL('image/jpeg', 1.0).split(',')[1];
-          deliver(window.bytesToB64(window.makePdf(jpg, c.width, c.height)), fileName('pdf'), 'application/pdf');
+          // الإقرارات (ورقة طولي): PDF بمقاس ورقة الورد بالظبط ومن غير ضغط
+          window.makePdfLossless(c, pt[0], pt[1]).then(function (bytes) {
+            deliver(window.bytesToB64(bytes), fileName('pdf'), 'application/pdf');
+            done();
+          }).catch(function () { toast('مش قادر يحفظ'); done(); });
+          return;
         }
       } catch (e) {
         toast('مش قادر يحفظ');
       }
-      btn.disabled = false;
-      state.busy = false;
+      done();
     }, 40);
   }
 

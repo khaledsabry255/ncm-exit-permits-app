@@ -99,7 +99,16 @@
     }
     for (var k = 0; k < lines.length; k++) {
       ctx.direction = isRtl(lines[k]) ? 'rtl' : 'ltr';
-      ctx.fillText(lines[k], f.cx, ys[k]);
+      if (f.align === 'right') {
+        // بيبدأ من مكان ثابت يمين (زي التاريخ بعد «التاريخ :» في الإقرار)
+        // ومن اليمين للشمال: اليوم جنب «التاريخ :» والسنة آخر حاجة — زي نقط الورد
+        ctx.direction = 'rtl';
+        ctx.textAlign = 'right';
+        ctx.fillText(lines[k], f.rx, ys[k]);
+        ctx.textAlign = 'center';
+      } else {
+        ctx.fillText(lines[k], f.cx, ys[k]);
+      }
     }
   }
 

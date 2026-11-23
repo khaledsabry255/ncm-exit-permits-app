@@ -76,3 +76,35 @@ window.FORMS = [
     driver: driverFor('waste')
   }
 ];
+
+/* ============================================================
+   الإقرارات — بيتكتب فيها التاريخ والجداول بس
+   ============================================================ */
+function emptyDeclItems() {
+  return [{ desc: '' }, { desc: '' }, { desc: '' }, { desc: '' }];
+}
+
+window.FORMS.push(
+  {
+    id: 'nonconf',
+    kind: 'decl',
+    short: 'غير مطابق للمواصفات',
+    name: 'إقرار غير مطابق للمواصفات',
+    color: '#b5483b',
+    icon: 'reject',
+    fixed: false,
+    items: emptyDeclItems(),
+    driver: { name: '', id: '', car: '' }
+  },
+  {
+    id: 'maint',
+    kind: 'decl',
+    short: 'للصيانة والعودة',
+    name: 'إقرار للصيانة والعودة',
+    color: '#6a55a8',
+    icon: 'wrench',
+    fixed: false,
+    items: emptyDeclItems(),
+    driver: { name: '', id: '', car: '' }
+  }
+);
