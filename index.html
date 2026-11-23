@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<title>تصاريح الخروج</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="bar" id="bar">
+  <button class="back" id="btn-back" aria-label="رجوع">
+    <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <img class="bar-logo" id="bar-logo" src="logo.png" alt="NCM">
+  <h1 id="title">تصاريح الخروج</h1>
+</header>
+
+<main>
+  <section class="screen" id="screen-home"></section>
+  <section class="screen" id="screen-form"></section>
+  <section class="screen" id="screen-preview">
+    <div class="sheet-wrap" id="sheet-wrap"></div>
+  </section>
+</main>
+
+<footer class="actions" id="actions-form">
+  <button class="btn primary" id="btn-preview">عرض الورقة</button>
+</footer>
+<footer class="actions" id="actions-preview">
+  <button class="btn primary" id="btn-png">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg>
+    حفظ صورة
+  </button>
+  <button class="btn dark" id="btn-pdf">
+    <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+    حفظ PDF
+  </button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="fonts-data.js"></script>
+<script src="templates.js"></script>
+<script src="drivers.js"></script>
+<script src="forms.js"></script>
+<script src="render.js"></script>
+<script src="pdf.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
