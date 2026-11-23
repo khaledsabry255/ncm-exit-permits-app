@@ -86,7 +86,9 @@
         '<span class="tt"><span class="k">' + label + '</span><span class="n">' + f.short + '</span></span>' +
         '</button>';
     }
-    var h = '<div class="grid">';
+    var h = '<div class="hero rise"><img src="logo.png" alt="NCM"></div>';
+    h += '<h2 class="sect-h rise" style="animation-delay:' + (n++ * 70) + 'ms">التصاريح</h2>';
+    h += '<div class="grid">';
     permits.forEach(function (f) { h += tile(f, 'تصريح خروج'); });
     h += '</div>';
     if (decls.length) {
