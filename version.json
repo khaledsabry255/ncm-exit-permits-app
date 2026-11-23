@@ -1,9 +1,12 @@
 {
- "version": 5,
+ "version": 6,
  "files": {
   "app.css": "f27e678c6d319eb20fe58f6aa808e0c696ecf8be0fe02e14845e0d0dafa1bc9a",
-  "app.js": "0cb89a1cf757ddd651507e220d108ba8f279e851466b008d5fd2b088fad68336",
+  "app.js": "c890a9efd6661a6badc5a49cebf4bb948f2b29347f5f58b3813135e9a1dcb206",
   "bg/general.png": "755aab2fea9f851a1e0afbd73e43db08a79eca05846dc6517a510b2a47504229",
+  "bg/general1.png": "fcda9db2a8882ce0d87f614a44dd914e4c03540840d63ec785a1e8b4d82a2455",
+  "bg/general2.png": "2ce759d9930c898643774c89b5934714410c22ad86c7776f6169dbcca25ab198",
+  "bg/general3.png": "d55001de72f0ffcd1c4d1be43de716c8f780e574bda90af4a1f7be62728fef16",
   "bg/kasah.png": "bb201e06b2c4f0c1088fc121f5db13fa00825fb8cadcf126f1433d1d82b257f3",
   "bg/maint.png": "d32353abedb87386077d4ceae41d94b90c5440217bec3449e5762f723a26bbeb",
   "bg/nonconf.png": "aff03597f5c50577eeb39a14850ed23885f3958f01d777a0212f7282a00e8ddc",
@@ -14,6 +17,6 @@
   "logo.png": "99ed0a4a8f3a2b916c206284e18dbdf9a733182cde7bd1c6630673ebb0c124b8",
   "pdf.js": "e3a776cef78b165a831e50a84a0179bcc4f75e46df3025f39ee8282948fd98f9",
   "render.js": "795ae306a180ef9a85942e1027e0fff64eaa4e5b79c514b9f57ee18ed705dae1",
-  "templates.js": "6932152a47e1c90ee9c98e3043990eab81214218b8f2c15b440023cbf1aecfe6"
+  "templates.js": "6cb37baaa1b7e884f51dabaf5bfc37ba5658617539b620ef9ce2b2df69555ac4"
  }
 }

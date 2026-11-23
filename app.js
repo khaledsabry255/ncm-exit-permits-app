@@ -443,13 +443,24 @@
     });
   }
 
+  /* الورقة اللي هتطلع: التصريح العام بعدد الصفوف اللي اتكتبت بس (من الورد نفسه)
+     والصفحة كلها زي ما هي ، الصفوف الزيادة بس هي اللي مش موجودة */
+  function sheetId() {
+    var id = state.form.id;
+    if (id === 'general' && state.rows < 4 && window.TEMPLATES['general' + state.rows]) {
+      return 'general' + state.rows;
+    }
+    return id;
+  }
+
   function renderPreview() {
     state.canvas = null;
     el.wrap.classList.remove('zoom');
     el.wrap.innerHTML = '<div class="loading"><div class="spin"></div></div>';
-    var id = state.form.id;
+    var formId = state.form.id, id = sheetId();
     window.renderPermit(id, sheetData()).then(function (c) {
-      if (state.screen !== 'preview' || state.form.id !== id) return;
+      if (state.screen !== 'preview' || state.form.id !== formId) return;
+      state.sheetId = id;
       state.canvas = c;
       el.wrap.innerHTML = '';
       el.wrap.appendChild(c);
@@ -494,7 +505,7 @@
     function done() { btn.disabled = false; state.busy = false; }
     setTimeout(function () {
       try {
-        var c = state.canvas, T = window.TEMPLATES[state.form.id];
+        var c = state.canvas, T = window.TEMPLATES[state.sheetId || state.form.id];
         var pt = T.pt || [841.89, 595.28];
         var a4Landscape = Math.abs(pt[0] - 841.9) < 2 && Math.abs(pt[1] - 595.3) < 2;
         if (kind === 'png') {
