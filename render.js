@@ -117,13 +117,14 @@
     var T = window.TEMPLATES[formId];
     return Promise.all([loadBg(formId), fontReady()]).then(function (r) {
       var img = r[0];
+      // الورقة بنفس مقاس صورة الورد بالبكسل بالظبط (من غير أي تكبير أو تصغير)
       var c = document.createElement('canvas');
-      c.width = T.w;
-      c.height = T.h;
+      c.width = img.naturalWidth || T.w;
+      c.height = img.naturalHeight || T.h;
       var ctx = c.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0);
       Object.keys(T.fields).forEach(function (key) {
         var f = T.fields[key];
         if (key === 'appNo') {

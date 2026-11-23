@@ -86,7 +86,8 @@
         '<span class="tt"><span class="k">' + label + '</span><span class="n">' + f.short + '</span></span>' +
         '</button>';
     }
-    var h = '<div class="hero rise"><img src="logo.png" alt="NCM"></div>';
+    var h = '<div class="hero rise"><img src="logo.png" alt="NCM">' +
+      '<span class="hr"></span><span class="appname">تصاريح الخروج</span></div>';
     h += '<h2 class="sect-h rise" style="animation-delay:' + (n++ * 70) + 'ms">التصاريح</h2>';
     h += '<div class="grid">';
     permits.forEach(function (f) { h += tile(f, 'تصريح خروج'); });
@@ -97,6 +98,10 @@
       decls.forEach(function (f) { h += tile(f, 'إقرار تصريح خروج', true); });
       h += '</div>';
     }
+    // التوقيع — زي NCM app بالظبط
+    h += '<p class="credit rise" style="animation-delay:' + (n * 70) + 'ms">' +
+      '<span class="credit-by">Designed by</span>' +
+      '<span class="credit-name">KHALED SABRY</span></p>';
     el.home.innerHTML = h;
     Array.prototype.forEach.call(el.home.querySelectorAll('.tile'), function (b) {
       b.addEventListener('click', function () { openForm(b.getAttribute('data-id')); });
@@ -200,7 +205,7 @@
     }
     var b = $('btn-save-fixed');
     if (b) b.hidden = true;
-    toast('بقى السائق الثابت لـ' + state.form.name);
+    toast('اتحفظ كسائق ثابت');
   }
 
   function knownDrivers() {
@@ -426,8 +431,8 @@
       var rd = splitISO(it.retDate);
       return {
         desc: it.desc, qty: it.qty, note: it.note,
-        noReturn: it.mode === 'noreturn' ? 'بدون عوده' : '',
-        ret: it.mode === 'return' ? 'عوده' : '',
+        noReturn: it.mode === 'noreturn' ? 'بدون عودة' : '',
+        ret: it.mode === 'return' ? 'عودة' : '',
         retDate: it.mode === 'return' && rd ? rd.d + ' / ' + rd.m + ' / ' + rd.y : ''
       };
     });
