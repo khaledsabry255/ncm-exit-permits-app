@@ -446,8 +446,9 @@
      والصفحة كلها زي ما هي ، الصفوف الزيادة بس هي اللي مش موجودة */
   function sheetId() {
     var id = state.form.id;
-    if (id === 'general' && state.rows < 4 && window.TEMPLATES['general' + state.rows]) {
-      return 'general' + state.rows;
+    var multi = id === 'general' || state.form.kind === 'decl';
+    if (multi && state.rows < 4 && window.TEMPLATES[id + state.rows]) {
+      return id + state.rows;
     }
     return id;
   }
