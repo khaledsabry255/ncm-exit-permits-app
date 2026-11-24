@@ -267,7 +267,7 @@
         field('مكان التفريغ', 'unloadPlace', d.unloadPlace) +
         field('غرض الخروج', 'purpose', d.purpose), 0);
 
-      // الورقة فيها 4 صفوف دايماً ؛ هنا بيظهر بس اللي بتكتب فيه
+      // بيظهر بس الصفوف اللي بتكتب فيها ، والورقة بتطلع بنفس العدد
       var items = '';
       d.items.slice(0, state.rows).forEach(function (it, i) {
         items += '<div class="item' + (i === newRow ? ' pop' : '') + '" data-item="' + i + '">' +
@@ -322,7 +322,7 @@
     }
   }
 
-  // حذف صف: اللي بعده بيطلع مكانه ، والورقة بتفضل 4 صفوف
+  // حذف صف: اللي بعده بيطلع مكانه
   function delRow(i) {
     state.data.items.splice(i, 1);
     state.data.items.push(emptyItem());
@@ -592,11 +592,12 @@
   window.__viewer = viewer;
   window.__viewerZoomAt = viewerZoomAt;
 
+  // اسم الملف: نوع الورقة + الرقم + التاريخ — من غير أي علامة الموبايل يرفضها في اسم ملف (زي / في الرقم)
   function fileName(ext) {
-    var dt = splitISO(state.data.date) || { d: '', m: '', y: '' };
-    var no = String(state.data.appNo || '').trim();
+    var dt = splitISO(state.data.date);
+    var no = toEn(String(state.data.appNo || '').trim()).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
     return state.form.name.replace(/\s+/g, '_') + (no ? '_' + no : '') +
-      '_' + dt.y + '-' + dt.m + '-' + dt.d + '.' + ext;
+      (dt ? '_' + dt.y + '-' + dt.m + '-' + dt.d : '') + '.' + ext;
   }
 
   function deliver(b64, name, mime) {

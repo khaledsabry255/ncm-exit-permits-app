@@ -112,7 +112,7 @@
     }
   }
 
-  /* يرجّع canvas بالحجم الكامل (300 dpi) */
+  /* يرجّع canvas بالحجم الكامل (400 dpi) */
   window.renderPermit = function (formId, data) {
     var T = window.TEMPLATES[formId];
     return Promise.all([loadBg(formId), fontReady()]).then(function (r) {

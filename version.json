@@ -1,8 +1,8 @@
 {
- "version": 13,
+ "version": 14,
  "files": {
   "app.css": "3204b6970a4ec44088f7735c1b667362071ee4ec5afe2b41eaa609afeb99e367",
-  "app.js": "c5eb6fc0de9a5fc91458dfe41d1fb18a70c3ea2cd934a8cc55a8d501873573ba",
+  "app.js": "2eca3fd6e089615f9fd4d878f96dfbf7b76e239295a9af818eb72c295777f6ac",
   "bg/general.png": "755aab2fea9f851a1e0afbd73e43db08a79eca05846dc6517a510b2a47504229",
   "bg/general1.png": "fcda9db2a8882ce0d87f614a44dd914e4c03540840d63ec785a1e8b4d82a2455",
   "bg/general2.png": "2ce759d9930c898643774c89b5934714410c22ad86c7776f6169dbcca25ab198",
@@ -22,7 +22,7 @@
   "index.html": "3fe1c2662c0e7c3ee0ed1d2d64d54cd72c302326ef259f41f0eb2b951d525e22",
   "logo.png": "99ed0a4a8f3a2b916c206284e18dbdf9a733182cde7bd1c6630673ebb0c124b8",
   "pdf.js": "e3a776cef78b165a831e50a84a0179bcc4f75e46df3025f39ee8282948fd98f9",
-  "render.js": "795ae306a180ef9a85942e1027e0fff64eaa4e5b79c514b9f57ee18ed705dae1",
+  "render.js": "7b77905acfe623af0e643361f508a989269aa1b2a5b6a16b5a6a8b69a5a1f486",
   "templates.js": "ecf58217667408ea916a8977a50c5e25ef858a2d3849b9e3aec9a8ec8f8eb7d7"
  }
 }
