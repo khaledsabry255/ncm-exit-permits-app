@@ -455,16 +455,15 @@
 
   function renderPreview() {
     state.canvas = null;
-    el.wrap.classList.remove('zoom');
+    viewer.cv = null;
     el.wrap.innerHTML = '<div class="loading"><div class="spin"></div></div>';
     var formId = state.form.id, id = sheetId();
     window.renderPermit(id, sheetData()).then(function (c) {
       if (state.screen !== 'preview' || state.form.id !== formId) return;
       state.sheetId = id;
       state.canvas = c;            // النسخة الكاملة (400 dpi) — دي اللي بتتحفظ
-      // نسخة للعرض بس: الورقة الكاملة أعرض من اللي كارت الشاشة في موبايلات كتير
-      // يقدر يعرضه مرة واحدة ، فالزوم كان بيقف. دي 2400 بكسل وكفاية جداً للتكبير
-      var k = Math.min(1, 2400 / c.width);
+      // نسخة للعرض بس: الورقة الكاملة أعرض من اللي كارت الشاشة في موبايلات كتير يقدر يعرضه
+      var k = Math.min(1, 3200 / c.width);
       var pv = document.createElement('canvas');
       pv.width = Math.round(c.width * k);
       pv.height = Math.round(c.height * k);
@@ -474,29 +473,123 @@
       px.drawImage(c, 0, 0, pv.width, pv.height);
       el.wrap.innerHTML = '';
       el.wrap.appendChild(pv);
-      el.wrap.classList.add('rise');
+      viewerReset(pv);
     }).catch(function () {
       el.wrap.innerHTML = '';
       toast('حصلت مشكلة في تجهيز الورقة');
     });
   }
 
-  /* لمسة على الورقة = تكبير عند المكان اللي لمسته ، ولمسة تانية ترجّعها */
-  el.wrap.addEventListener('click', function (e) {
-    var cv = el.wrap.querySelector('canvas');
-    if (!state.canvas || !cv) return;
-    if (el.wrap.classList.contains('zoom')) {
-      el.wrap.classList.remove('zoom');
-      el.wrap.scrollLeft = 0;
-      return;
+  /* ============================================================
+     عارض الصورة: التكبير جوّه المعاينة بس (التطبيق نفسه ميتكبّرش)
+     صباعين = تكبير وتصغير ، صباع واحد = تحريك ، لمستين = تكبير / رجوع
+     ============================================================ */
+  var viewer = { cv: null, s: 1, tx: 0, ty: 0, fw: 0, fh: 0, pts: {}, last: null, tap: null };
+  var MAX_ZOOM = 5;
+
+  function viewerReset(cv) {
+    viewer.cv = cv;
+    var W = el.wrap.clientWidth, H = el.wrap.clientHeight;
+    var ar = cv.width / cv.height;
+    viewer.fw = Math.min(W, H * ar);
+    viewer.fh = viewer.fw / ar;
+    cv.style.width = viewer.fw + 'px';
+    cv.style.height = viewer.fh + 'px';
+    viewer.s = 1;
+    viewer.pts = {};
+    viewerClamp();
+  }
+  function viewerClamp() {
+    var W = el.wrap.clientWidth, H = el.wrap.clientHeight;
+    var w = viewer.fw * viewer.s, h = viewer.fh * viewer.s;
+    viewer.tx = w <= W ? (W - w) / 2 : Math.min(0, Math.max(W - w, viewer.tx));
+    viewer.ty = h <= H ? (H - h) / 2 : Math.min(0, Math.max(H - h, viewer.ty));
+    if (viewer.cv) {
+      viewer.cv.style.transform = 'translate(' + viewer.tx + 'px,' + viewer.ty + 'px) scale(' + viewer.s + ')';
     }
-    var r = cv.getBoundingClientRect();
-    var rx = (e.clientX - r.left) / r.width, ry = (e.clientY - r.top) / r.height;
-    el.wrap.classList.add('zoom');
-    var r2 = cv.getBoundingClientRect();
-    el.wrap.scrollLeft = Math.max(0, rx * r2.width - el.wrap.clientWidth / 2);
-    window.scrollTo(0, Math.max(0, window.scrollY + r2.top + ry * r2.height - window.innerHeight / 2));
+  }
+  function viewerZoomAt(px, py, s1) {
+    s1 = Math.max(1, Math.min(MAX_ZOOM, s1));
+    var k = s1 / viewer.s;
+    viewer.tx = px - (px - viewer.tx) * k;
+    viewer.ty = py - (py - viewer.ty) * k;
+    viewer.s = s1;
+    viewerClamp();
+  }
+  function localPoint(e) {
+    var r = el.wrap.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function twoPoints() {
+    var ids = Object.keys(viewer.pts);
+    return ids.length >= 2 ? [viewer.pts[ids[0]], viewer.pts[ids[1]]] : null;
+  }
+
+  el.wrap.addEventListener('pointerdown', function (e) {
+    if (!viewer.cv) return;
+    try { el.wrap.setPointerCapture(e.pointerId); } catch (err) {}
+    viewer.pts[e.pointerId] = localPoint(e);
+    var two = twoPoints();
+    viewer.last = two ? {
+      d: Math.hypot(two[0].x - two[1].x, two[0].y - two[1].y),
+      mx: (two[0].x + two[1].x) / 2, my: (two[0].y + two[1].y) / 2
+    } : { mx: viewer.pts[e.pointerId].x, my: viewer.pts[e.pointerId].y };
   });
+  el.wrap.addEventListener('pointermove', function (e) {
+    if (!viewer.cv || !viewer.pts[e.pointerId]) return;
+    viewer.pts[e.pointerId] = localPoint(e);
+    var two = twoPoints();
+    if (two) {
+      var d = Math.hypot(two[0].x - two[1].x, two[0].y - two[1].y);
+      var mx = (two[0].x + two[1].x) / 2, my = (two[0].y + two[1].y) / 2;
+      if (viewer.last && viewer.last.d) {
+        viewer.tx += mx - viewer.last.mx;
+        viewer.ty += my - viewer.last.my;
+        viewerZoomAt(mx, my, viewer.s * d / viewer.last.d);
+      }
+      viewer.last = { d: d, mx: mx, my: my };
+    } else if (viewer.last) {
+      var p = viewer.pts[e.pointerId];
+      viewer.tx += p.x - viewer.last.mx;
+      viewer.ty += p.y - viewer.last.my;
+      viewer.last = { mx: p.x, my: p.y };
+      viewerClamp();
+    }
+  });
+  function pointerEnd(e) {
+    if (!viewer.pts[e.pointerId]) return;
+    var p = viewer.pts[e.pointerId];
+    var wasSingle = Object.keys(viewer.pts).length === 1;
+    delete viewer.pts[e.pointerId];
+    var rest = Object.keys(viewer.pts);
+    viewer.last = rest.length ? { mx: viewer.pts[rest[0]].x, my: viewer.pts[rest[0]].y } : null;
+    // لمستين ورا بعض = تكبير عند المكان ، أو رجوع للحجم الطبيعي
+    if (wasSingle && e.type === 'pointerup') {
+      var now = Date.now();
+      if (viewer.tap && now - viewer.tap.t < 320 && Math.hypot(p.x - viewer.tap.x, p.y - viewer.tap.y) < 30) {
+        viewerZoomAt(p.x, p.y, viewer.s > 1.05 ? 1 : 2.5);
+        viewer.tap = null;
+      } else {
+        viewer.tap = { t: now, x: p.x, y: p.y };
+      }
+    }
+  }
+  el.wrap.addEventListener('pointerup', pointerEnd);
+  el.wrap.addEventListener('pointercancel', pointerEnd);
+  // عجلة الماوس (للتجربة على الكمبيوتر)
+  el.wrap.addEventListener('wheel', function (e) {
+    if (!viewer.cv) return;
+    e.preventDefault();
+    var p = localPoint(e);
+    viewerZoomAt(p.x, p.y, viewer.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  }, { passive: false });
+  window.addEventListener('resize', function () {
+    if (state.screen === 'preview' && viewer.cv) viewerReset(viewer.cv);
+  });
+
+  /* للاختبار من الكمبيوتر */
+  window.__viewer = viewer;
+  window.__viewerZoomAt = viewerZoomAt;
 
   function fileName(ext) {
     var dt = splitISO(state.data.date) || { d: '', m: '', y: '' };

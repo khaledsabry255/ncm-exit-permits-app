@@ -436,17 +436,30 @@ main { max-width: 640px; margin: 0 auto; }
 .reveal.on { display: block; animation: rise .3s ease both; }
 
 /* ---------- المعاينة ---------- */
+/* عارض الصورة: بياخد المساحة اللي بين العنوان والأزرار ، والتكبير جوّاه بس */
 .sheet-wrap {
+  position: relative;
+  height: calc(100vh - 60px - 32px - 92px - var(--safe-b));
+  height: calc(100dvh - 60px - 32px - 92px - var(--safe-b));
+  min-height: 240px;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 14px;
   box-shadow: var(--shadow);
-  overflow: auto;
-  min-height: 200px;
-  direction: ltr;               /* عشان التمرير يمين وشمال يبقى طبيعي وهي متكبّرة */
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  touch-action: none;
+  direction: ltr;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.sheet-wrap canvas { display: block; width: 100%; height: auto; }
-.sheet-wrap.zoom canvas { width: 250%; max-width: none; }
+.sheet-wrap canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  display: block;
+}
+#screen-preview { padding-bottom: 0; }
 .loading {
   display: grid;
   place-items: center;
