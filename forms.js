@@ -106,5 +106,16 @@ window.FORMS.push(
     fixed: false,
     items: emptyDeclItems(),
     driver: { name: '', id: '', car: '' }
+  },
+  {
+    id: 'endwork',
+    kind: 'decl',
+    short: 'لإنتهاء الأعمال',
+    name: 'إقرار لإنتهاء الأعمال',
+    color: '#13866f',
+    icon: 'done',
+    fixed: false,
+    items: emptyDeclItems(),
+    driver: { name: '', id: '', car: '' }
   }
 );
