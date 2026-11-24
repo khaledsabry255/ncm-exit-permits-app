@@ -379,6 +379,24 @@ main { max-width: 640px; margin: 0 auto; }
   padding: 12px;
 }
 .ltr { direction: ltr; }
+/* وحدة ثابتة جوّه الصندوق (KG) */
+.sfx { position: relative; }
+.sfx input { padding-left: 56px; padding-right: 56px; }
+.sfx span {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--c, var(--brand)) 12%, #fff);
+  color: var(--c, var(--brand));
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  direction: ltr;
+  pointer-events: none;
+}
 
 /* كل الصناديق فوق بعض (مفيش صندوقين جنب بعض) */
 .row { display: block; }

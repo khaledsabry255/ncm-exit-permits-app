@@ -146,6 +146,8 @@
     } else {
       input = '<input type="' + (opts.type || 'text') + '" value="' + esc(value) + '"' +
         ' autocomplete="off"' + attrs + '>';
+      // وحدة ثابتة جنب الرقم (زي KG) — بتتكتب لوحدها على الورقة
+      if (opts.suffix) input = '<div class="sfx">' + input + '<span>' + opts.suffix + '</span></div>';
     }
     return '<div class="f' + (opts.big ? ' big' : '') + (opts.narrow ? ' narrow' : '') + '"><label>' +
       label + '</label>' + input + '</div>';
@@ -254,7 +256,7 @@
         field('رقم التصريح', 'appNo', d.appNo, { mode: 'numeric', big: true }) +
         '<div class="row">' +
           field('التاريخ', 'date', d.date, { type: 'date' }) +
-          field('العدد / الكمية', 'items.0.qty', d.items[0].qty) +
+          field('العدد / الكمية', 'items.0.qty', d.items[0].qty, { mode: 'decimal', suffix: 'KG' }) +
         '</div>', 0);
       h += driverCard(d, 70);
       h += card('الحمولة',
@@ -430,7 +432,11 @@
       });
     }
     var items = d.items.map(function (it) {
-      if (f.fixed) return it;
+      if (f.fixed) {
+        // التلاتة الثابتين: الكمية بالكيلو — KG بتتكتب بعد الرقم لوحدها
+        var q = String(it.qty || '').trim().replace(/\s*k\.?g\.?$/i, '').replace(/\s*كيلو(جرام)?$/, '').trim();
+        return Object.assign({}, it, { qty: q ? q + ' KG' : '' });
+      }
       return {
         desc: it.desc, qty: it.qty, note: it.note,
         noReturn: it.mode === 'noreturn' ? 'بدون عودة' : '',
