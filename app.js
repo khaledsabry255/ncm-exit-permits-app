@@ -97,10 +97,11 @@
       decls.forEach(function (f) { h += tile(f, 'إقرار تصريح خروج', true); });
       h += '</div>';
     }
-    // التوقيع — زي NCM app بالظبط
-    h += '<p class="credit rise" style="animation-delay:' + (n * 70) + 'ms">' +
+    // التوقيع
+    h += '<div class="credit rise" style="animation-delay:' + (n * 70) + 'ms">' +
       '<span class="credit-by">Designed by</span>' +
-      '<span class="credit-name">KHALED SABRY</span></p>';
+      '<span class="credit-sig"><span class="credit-mono">KS</span>' +
+      '<span class="credit-name">KHALED SABRY</span></span></div>';
     el.home.innerHTML = h;
     Array.prototype.forEach.call(el.home.querySelectorAll('.tile'), function (b) {
       b.addEventListener('click', function () { openForm(b.getAttribute('data-id')); });
