@@ -245,7 +245,8 @@
       if (state.rows < d.items.length) its += addBtn();
       h += card('الأصناف', its, 70);
       h += card('السائق',
-        field('اسم السائق', 'driver.name', d.driver.name, { list: 'drivers' }) +
+        // الإقرار: السائق بيتكتب بالإيد ، من غير أسماء السواقين الثابتين
+        field('اسم السائق', 'driver.name', d.driver.name) +
         field('الرقم القومي', 'driver.id', d.driver.id, { mode: 'numeric', ltr: true }) +
         field('رقم السيارة', 'driver.car', d.driver.car), 140);
     } else if (f.fixed) {
@@ -298,7 +299,8 @@
       h += driverCard(d, 140);
     }
 
-    h += '<datalist id="drivers">' + knownDrivers().map(function (dr) {
+    // قائمة السواقين الثابتين للتلاتة الثابتين بس
+    if (f.fixed) h += '<datalist id="drivers">' + knownDrivers().map(function (dr) {
       return '<option value="' + esc(dr.name) + '">';
     }).join('') + '</datalist>';
 
