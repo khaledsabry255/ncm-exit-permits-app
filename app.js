@@ -439,10 +439,11 @@
       }
       return {
         desc: it.desc, qty: it.qty, note: it.note,
-        noReturn: it.mode === 'noreturn' ? 'بدون عودة' : '',
-        ret: it.mode === 'return' ? 'عودة' : '',
+        // الخانة اللي متختارتش بيتكتب فيها × (يعني مفيش): بدون عودة ← × في «عودة» و«تاريخ العودة»
+        noReturn: it.mode === 'noreturn' ? 'بدون عودة' : it.mode === 'return' ? '×' : '',
+        ret: it.mode === 'return' ? 'عودة' : it.mode === 'noreturn' ? '×' : '',
         // تاريخ العودة بيتكتب زي ما هو (تاريخ أو أي كلام)
-        retDate: it.mode === 'return' ? String(it.retDate || '').trim() : ''
+        retDate: it.mode === 'return' ? String(it.retDate || '').trim() : it.mode === 'noreturn' ? '×' : ''
       };
     });
     return enDeep({
