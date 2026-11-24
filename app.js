@@ -159,7 +159,8 @@
   function driverCard(d, delay) {
     var dr = d.driver;
     return card('السائق والعربية',
-      field('اسم السائق رباعي', 'driver.name', dr.name, { list: 'drivers' }) +
+      // التصريح العام: السائق بيتكتب بإيد اللي شغال عليه ، من غير أسماء السواقين الثابتين
+      field('اسم السائق رباعي', 'driver.name', dr.name, state.form.fixed ? { list: 'drivers' } : {}) +
       field('الرقم القومي', 'driver.id', dr.id, { mode: 'numeric', ltr: true }) +
       '<div class="row">' +
         field('نوع المركبة', 'driver.brand', dr.brand) +
@@ -374,7 +375,7 @@
     });
 
     // اختيار سائق معروف من القائمة بيملا باقي بياناته
-    var nameInp = el.form.querySelector('[data-k="driver.name"]');
+    var nameInp = el.form.querySelector('[data-k="driver.name"][list]');
     if (nameInp) nameInp.addEventListener('change', function () {
       var hit = knownDrivers().filter(function (x) { return x.name === nameInp.value.trim(); })[0];
       if (!hit) return;
