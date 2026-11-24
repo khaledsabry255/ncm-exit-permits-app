@@ -256,7 +256,7 @@
         field('رقم التصريح', 'appNo', d.appNo, { mode: 'numeric', big: true }) +
         '<div class="row">' +
           field('التاريخ', 'date', d.date, { type: 'date' }) +
-          field('العدد / الكمية', 'items.0.qty', d.items[0].qty, { mode: 'decimal', suffix: 'KG' }) +
+          field('العدد / الكمية', 'items.0.qty', d.items[0].qty, { mode: 'decimal', suffix: 'kg' }) +
         '</div>', 0);
       h += driverCard(d, 70);
       h += card('الحمولة',
@@ -433,9 +433,9 @@
     }
     var items = d.items.map(function (it) {
       if (f.fixed) {
-        // التلاتة الثابتين: الكمية بالكيلو — KG بتتكتب بعد الرقم لوحدها
+        // التلاتة الثابتين: الكمية بالكيلو — kg بتتكتب بعد الرقم لوحدها (زي الورق المطبوع)
         var q = String(it.qty || '').trim().replace(/\s*k\.?g\.?$/i, '').replace(/\s*كيلو(جرام)?$/, '').trim();
-        return Object.assign({}, it, { qty: q ? q + ' KG' : '' });
+        return Object.assign({}, it, { qty: q ? q + ' kg' : '' });
       }
       return {
         desc: it.desc, qty: it.qty, note: it.note,
