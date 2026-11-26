@@ -63,7 +63,7 @@ window.FORMS = [
     color: '#1565c0',
     icon: 'drop',
     fixed: true,
-    startNo: 20,
+    startNo: 1,
     unloadPlace: 'مركز العربية للتخلص الأمن من المخلفات الخطرة والغير خطرة',
     purpose: 'التخلص الأمن من المخلفات',
     items: [{
@@ -85,7 +85,7 @@ window.FORMS = [
     color: '#0e7c86',
     icon: 'bin',
     fixed: true,
-    startNo: 4,
+    startNo: 1,
     unloadPlace: 'المقلب الصحى العمومى لمدينة الضبعة',
     purpose: 'التخلص الأمن من المخلفات',
     items: [{
