@@ -17,7 +17,8 @@
     wrap: $('sheet-wrap'), actForm: $('actions-form'), actPrev: $('actions-preview'),
     toast: $('toast'), next: $('btn-next'), nextLabel: $('next-label')
   };
-  var state = { screen: 'home', form: null, data: null, canvas: null, busy: false, saved: false };
+  var state = { screen: 'home', form: null, data: null, canvas: null, busy: false,
+                saved: false, claimed: null, formSeq: 0 };
 
   var ICONS = {
     doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
@@ -111,10 +112,16 @@
   }
 
   /* ============================================================
-     رقم التصريح: التطبيق فاكر آخر رقم اتعمل في كل نوع لوحده
-     أول رقم في كل نوع جاي من forms.js ، وبعد كده الموبايل هو اللي فاكر
+     رقم التصريح: سجل بآخر رقم اتعمل في كل نوع لوحده
+
+     لو sync.js موجود (جوّه الـ APK): السجل مشترك بين كل الموبايلات —
+     الرقم بيتقرا من السيرفر أول ما التصريح يتفتح ، وبيترسل لما الورقة تتحفظ.
+     مفيش نت = الخانة تفضل فاضية واللي شغال يكتب الرقم بإيده (طلب خالد).
+     من غير sync.js: كل موبايل بيعدّ لوحده من localStorage.
      ============================================================ */
   var LS_LASTNO = 'exitpermit.lastNo.';
+  var LS_PEND = 'exitpermit.pending';
+  var SY = (window.SYNC && window.SYNC.url && window.SYNC.key) ? window.SYNC : null;
 
   // بيزوّد واحد على آخر رقم في النص ، والأصفار اللي قدامه زي ما هي (001 ← 002)
   function bumpNo(s) {
@@ -125,13 +132,59 @@
     return m[1] + n + m[3];
   }
 
+  // قيمة الرقم نفسه للمقارنة (نفس الجزء اللي bumpNo بيزوّده)
+  function noVal(s) {
+    var m = toEn(String(s == null ? '' : s).trim()).match(/^(.*?)(\d+)(\D*)$/);
+    return m ? Number(m[2]) : null;
+  }
+
+  function startNoOf(f) { return f.startNo == null ? '' : String(f.startNo); }
+
   function nextNoFor(f) {
     if (f.kind === 'decl') return '';            // الإقرارات ملهاش أرقام
     var last = null;
     try { last = localStorage.getItem(LS_LASTNO + f.id); } catch (e) {}
-    if (last === null || last === '') return f.startNo == null ? '' : String(f.startNo);
+    if (last === null || last === '') return startNoOf(f);
     return bumpNo(last);
   }
+
+  /* ---------- الكلام مع السيرفر ---------- */
+  function syncCall(fn, body) {
+    return new Promise(function (resolve, reject) {
+      var over = false;
+      var t = setTimeout(function () { if (!over) { over = true; x.abort(); reject(new Error('timeout')); } }, 7000);
+      var x = new XMLHttpRequest();
+      x.open('POST', SY.url + '/rest/v1/rpc/' + fn, true);
+      x.setRequestHeader('apikey', SY.key);
+      x.setRequestHeader('Authorization', 'Bearer ' + SY.key);
+      x.setRequestHeader('Content-Type', 'application/json');
+      x.onload = function () {
+        if (over) return;
+        over = true; clearTimeout(t);
+        if (x.status >= 200 && x.status < 300) {
+          try { resolve(JSON.parse(x.responseText)); } catch (e) { resolve(null); }
+        } else { reject(new Error('http ' + x.status)); }
+      };
+      x.onerror = function () { if (!over) { over = true; clearTimeout(t); reject(new Error('net')); } };
+      x.send(JSON.stringify(body));
+    });
+  }
+
+  /* أرقام اتعملت والنت كان قاطع — بتتبعت أول ما النت يرجع */
+  function pendList() { try { return JSON.parse(localStorage.getItem(LS_PEND) || '[]'); } catch (e) { return []; } }
+  function pendSave(a) { try { localStorage.setItem(LS_PEND, JSON.stringify(a.slice(-20))); } catch (e) {} }
+  function pendAdd(form, no) { var a = pendList(); a.push([form, no]); pendSave(a); }
+  function pendFlush() {
+    var a = pendList();
+    if (!SY || !a.length) return Promise.resolve();
+    pendSave([]);
+    return a.reduce(function (p, it) {
+      return p.then(function () { return syncCall('exitp_no_used', { p_form: it[0], p_no: it[1] }); })
+        .catch(function () { pendAdd(it[0], it[1]); });
+    }, Promise.resolve());
+  }
+
+  var claimWait = Promise.resolve();   // آخر رقم اتبعت لسه في السكة
 
   // الرقم ده اتعمل — التصريح اللي بعده ياخد اللي بعده
   function rememberNo() {
@@ -139,7 +192,50 @@
     if (!f || f.kind === 'decl') return;
     var no = toEn(String(state.data.appNo || '').trim());
     if (!/\d/.test(no)) return;
+    state.claimed = no;
     try { localStorage.setItem(LS_LASTNO + f.id, no); } catch (e) {}
+    if (!SY) return;
+    claimWait = syncCall('exitp_no_used', { p_form: f.id, p_no: no })
+      .catch(function () { pendAdd(f.id, no); });
+  }
+
+  // بيجيب الرقم من السجل المشترك ويحطه في الخانة (الفورم بيفضل شغال طول الوقت)
+  function fillSharedNo(f, seq) {
+    claimWait.then(pendFlush).then(function () {
+      return syncCall('exitp_no_get', { p_form: f.id });
+    }).then(function (last) {
+      if (seq !== state.formSeq || state.form !== f) return;
+      var no = (last === null || last === undefined || last === '') ? startNoOf(f) : bumpNo(String(last));
+      if (String(state.data.appNo || '').trim()) return;   // كتب رقم بإيده قبل ما الرد يوصل
+      state.data.appNo = no;
+      var inp = el.form.querySelector('[data-k="appNo"]');
+      if (inp && !inp.value) inp.value = no;
+    }).catch(function () {
+      if (seq !== state.formSeq || state.form !== f) return;
+      toast('مفيش نت — اكتب رقم التصريح بإيدك');
+    });
+  }
+
+  // قبل ما الورقة تتعرض: لو حد تاني اخد الرقم ده ، الرقم بيتصحّح
+  function refreshNoIfTaken() {
+    var f = state.form;
+    if (!SY || !f || f.kind === 'decl' || state.saved) return;
+    var no = toEn(String(state.data.appNo || '').trim());
+    if (!/\d/.test(no) || no === state.claimed) return;
+    var seq = state.formSeq;
+    syncCall('exitp_no_get', { p_form: f.id }).then(function (last) {
+      if (seq !== state.formSeq || state.form !== f || state.saved) return;
+      if (last === null || last === undefined || last === '') return;
+      var mine = noVal(no), theirs = noVal(String(last));
+      if (mine === null || theirs === null || mine > theirs) return;
+      var fixed = bumpNo(String(last));
+      if (!fixed || fixed === state.data.appNo) return;
+      state.data.appNo = fixed;
+      var inp = el.form.querySelector('[data-k="appNo"]');
+      if (inp) inp.value = fixed;
+      toast('رقم ' + no + ' اتاخد — بقى ' + fixed);
+      if (state.screen === 'preview') { updateNextBtn(); renderPreview(); }
+    }).catch(function () {});
   }
 
   /* ============================================================
@@ -148,8 +244,11 @@
   function openForm(id) {
     var f = window.FORMS.filter(function (x) { return x.id === id; })[0];
     state.form = f;
+    state.formSeq = (state.formSeq || 0) + 1;
+    state.claimed = null;
     state.data = {
-      appNo: nextNoFor(f),
+      // السجل المشترك: الخانة بتفضل فاضية لحد ما الرقم يوصل من السيرفر
+      appNo: SY ? '' : nextNoFor(f),
       date: todayISO(),
       unloadPlace: f.unloadPlace,
       purpose: f.purpose,
@@ -162,6 +261,7 @@
     document.body.style.setProperty('--c', f.color);
     renderForm();
     show('form');
+    if (SY && f.kind !== 'decl') fillSharedNo(f, state.formSeq);
   }
 
   function field(label, key, value, opts) {
@@ -745,6 +845,7 @@
   });
   $('btn-preview').addEventListener('click', function () {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    refreshNoIfTaken();
     show('preview');
     renderPreview();
   });
