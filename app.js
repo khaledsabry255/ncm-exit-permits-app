@@ -434,7 +434,8 @@
     if (state.screen === 'form') {
       DRIVER_KEYS.forEach(function (k) {
         var box = el.form.querySelector('[data-k="driver.' + k + '"]');
-        if (box && document.activeElement !== box) box.value = d[k];
+        // حتى الخانة اللي عليها المؤشر — اتأكدنا فوق إنه مكتبش فيها حاجة
+        if (box) box.value = d[k];
       });
       refreshSaveFixed();
     } else if (state.screen === 'preview') {
