@@ -58,6 +58,7 @@
     }
     if (p[0] === 'driver') return (d.driver || {})[p[1]] || '';
     if (p[0] === 'sigNames') return (d.sigNames || [])[+p[1]] || '';
+    if (p[0] === 'sigTitle') return (d.sigTitles || [])[+p[1]] || '';
     return '';
   }
 

@@ -508,8 +508,8 @@ main { max-width: 640px; margin: 0 auto; }
 /* عارض الصورة: بياخد المساحة اللي بين العنوان والأزرار ، والتكبير جوّاه بس */
 .sheet-wrap {
   position: relative;
-  height: calc(100vh - 60px - 32px - 92px - var(--safe-b));
-  height: calc(100dvh - 60px - 32px - 92px - var(--safe-b));
+  height: calc(100vh - 60px - 32px - 148px - var(--safe-b));
+  height: calc(100dvh - 60px - 32px - 148px - var(--safe-b));
   min-height: 240px;
   background: #fff;
   border-radius: 14px;
@@ -558,7 +558,7 @@ main { max-width: 640px; margin: 0 auto; }
   padding: 12px 14px calc(12px + var(--safe-b));
   background: linear-gradient(to top, var(--bg) 70%, rgba(237, 242, 248, 0));
 }
-.actions.on { display: flex; animation: rise .3s ease both; }
+.actions.on { display: flex; flex-wrap: wrap; animation: rise .3s ease both; }
 .actions .btn { flex: 1; }
 .btn {
   height: 56px;
@@ -579,6 +579,15 @@ main { max-width: 640px; margin: 0 auto; }
 .btn.primary { background: var(--c, var(--brand)); box-shadow: 0 8px 18px -8px var(--c, var(--brand)); }
 .btn.dark { background: var(--brand-navy); box-shadow: 0 8px 18px -8px var(--brand-navy); }
 .btn[disabled] { opacity: .55; }
+/* زرار «تصريح جديد»: صف لوحده فوق زراير الحفظ */
+.btn.wide { flex: 1 0 100%; height: 46px; font-size: 15.5px; }
+.btn.ghost {
+  background: var(--card);
+  color: var(--brand-navy);
+  border: 1.5px solid var(--line-2);
+  box-shadow: 0 3px 10px -6px rgba(16, 40, 72, .5);
+}
+.btn.ghost svg { color: var(--c, var(--brand)); stroke-width: 2.6; }
 
 /* ---------- رسالة صغيرة ---------- */
 .toast {

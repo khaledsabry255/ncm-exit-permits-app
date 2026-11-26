@@ -17,6 +17,7 @@ window.FORMS = [
     color: '#1f4e79',
     icon: 'doc',
     fixed: false,
+    startNo: 1,
     unloadPlace: '',
     purpose: '',
     items: [
@@ -24,6 +25,12 @@ window.FORMS = [
       { desc: '', qty: '', mode: '', retDate: '', note: '' },
       { desc: '', qty: '', mode: '', retDate: '', note: '' },
       { desc: '', qty: '', mode: '', retDate: '', note: '' }
+    ],
+    sigTitles: [
+      { ar: 'المسؤول عن التحميل', en: 'Waste Removal Officer' },
+      { ar: 'مدير الصيانة', en: 'Maintenance Manager' },
+      { ar: 'مدير المحطات', en: 'Plants Manager' },
+      { ar: 'مسؤول الامن', en: 'Security Officer' }
     ],
     driver: { name: '', id: '', brand: '', color: '', tractor: '', trailer: '', phone: '' }
   },
@@ -34,6 +41,7 @@ window.FORMS = [
     color: '#3d8f3b',
     icon: 'truck',
     fixed: true,
+    startNo: 1,
     unloadPlace: 'المقلب الصحى العمومى لمدينة الضبعة',
     purpose: 'التخلص الأمن من المخلفات',
     items: [{
@@ -41,6 +49,11 @@ window.FORMS = [
       noReturn: 'بدون عوده', ret: '---------------', retDate: '-----------------',
       note: 'Non - Hazardous Solid water\nمخلفات صلبة غير خطرة'
     }],
+    sigTitles: [
+      { ar: 'المسؤول عن التحميل', en: 'Waste Removal Officer' },
+      { ar: 'مسؤول البيئة', en: 'Environmental Officer' },
+      { ar: 'مسؤول الامن', en: 'Security Officer' }
+    ],
     driver: driverFor('radsh')
   },
   {
@@ -50,6 +63,7 @@ window.FORMS = [
     color: '#1565c0',
     icon: 'drop',
     fixed: true,
+    startNo: 20,
     unloadPlace: 'مركز العربية للتخلص الأمن من المخلفات الخطرة والغير خطرة',
     purpose: 'التخلص الأمن من المخلفات',
     items: [{
@@ -57,6 +71,11 @@ window.FORMS = [
       noReturn: 'بدون عوده', ret: '----------------', retDate: '---------------',
       note: 'Hazardous Waste water\nمخلفات سائلة خطرة'
     }],
+    sigTitles: [
+      { ar: 'المسؤول عن التحميل', en: 'Waste Removal Officer' },
+      { ar: 'مسؤول البيئة', en: 'Environmental Officer' },
+      { ar: 'مسؤول الامن', en: 'Security Officer' }
+    ],
     driver: driverFor('kasah')
   },
   {
@@ -66,6 +85,7 @@ window.FORMS = [
     color: '#0e7c86',
     icon: 'bin',
     fixed: true,
+    startNo: 4,
     unloadPlace: 'المقلب الصحى العمومى لمدينة الضبعة',
     purpose: 'التخلص الأمن من المخلفات',
     items: [{
@@ -73,6 +93,11 @@ window.FORMS = [
       noReturn: 'بدون عوده', ret: '---------------', retDate: '-----------------',
       note: 'Non - Hazardous Solid water\nمخلفات صلبة غير خطرة'
     }],
+    sigTitles: [
+      { ar: 'المسؤول عن التحميل', en: 'Waste Removal Officer' },
+      { ar: 'مسؤول البيئة', en: 'Environmental Officer' },
+      { ar: 'مسؤول الامن', en: 'Security Officer' }
+    ],
     driver: driverFor('waste')
   }
 ];

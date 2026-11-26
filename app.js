@@ -15,9 +15,9 @@
     back: $('btn-back'), title: $('title'),
     home: $('screen-home'), form: $('screen-form'), prev: $('screen-preview'),
     wrap: $('sheet-wrap'), actForm: $('actions-form'), actPrev: $('actions-preview'),
-    toast: $('toast')
+    toast: $('toast'), next: $('btn-next'), nextLabel: $('next-label')
   };
-  var state = { screen: 'home', form: null, data: null, canvas: null, busy: false };
+  var state = { screen: 'home', form: null, data: null, canvas: null, busy: false, saved: false };
 
   var ICONS = {
     doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
@@ -30,6 +30,7 @@
   };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  var NL = String.fromCharCode(10);   // سطر جديد جوّه خانة واحدة
 
   /* أي رقم عربي (٠-٩ أو ۰-۹) يتحوّل إنجليزي 0-9 */
   var AR_DIGITS = /[٠-٩۰-۹]/g;
@@ -110,20 +111,54 @@
   }
 
   /* ============================================================
+     رقم التصريح: التطبيق فاكر آخر رقم اتعمل في كل نوع لوحده
+     أول رقم في كل نوع جاي من forms.js ، وبعد كده الموبايل هو اللي فاكر
+     ============================================================ */
+  var LS_LASTNO = 'exitpermit.lastNo.';
+
+  // بيزوّد واحد على آخر رقم في النص ، والأصفار اللي قدامه زي ما هي (001 ← 002)
+  function bumpNo(s) {
+    var m = toEn(String(s == null ? '' : s).trim()).match(/^(.*?)(\d+)(\D*)$/);
+    if (!m) return '';
+    var n = String(Number(m[2]) + 1);
+    while (n.length < m[2].length) n = '0' + n;
+    return m[1] + n + m[3];
+  }
+
+  function nextNoFor(f) {
+    if (f.kind === 'decl') return '';            // الإقرارات ملهاش أرقام
+    var last = null;
+    try { last = localStorage.getItem(LS_LASTNO + f.id); } catch (e) {}
+    if (last === null || last === '') return f.startNo == null ? '' : String(f.startNo);
+    return bumpNo(last);
+  }
+
+  // الرقم ده اتعمل — التصريح اللي بعده ياخد اللي بعده
+  function rememberNo() {
+    var f = state.form;
+    if (!f || f.kind === 'decl') return;
+    var no = toEn(String(state.data.appNo || '').trim());
+    if (!/\d/.test(no)) return;
+    try { localStorage.setItem(LS_LASTNO + f.id, no); } catch (e) {}
+  }
+
+  /* ============================================================
      الفورم — كل تصريح بيبدأ جديد من بياناته الثابتة
      ============================================================ */
   function openForm(id) {
     var f = window.FORMS.filter(function (x) { return x.id === id; })[0];
     state.form = f;
     state.data = {
-      appNo: '',
+      appNo: nextNoFor(f),
       date: todayISO(),
       unloadPlace: f.unloadPlace,
       purpose: f.purpose,
       items: clone(f.items),
-      driver: clone(fixedDriver(f))
+      driver: clone(fixedDriver(f)),
+      sigTitles: clone(f.sigTitles || [])
     };
     state.rows = 1; // التصريح العام والإقرارات بيبدأوا بصنف واحد
+    state.saved = false;
     document.body.style.setProperty('--c', f.color);
     renderForm();
     show('form');
@@ -232,6 +267,19 @@
       '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>إضافة صنف</button>';
   }
 
+  // الوظايف اللي بتوقّع تحت التصريح: مكتوبة جاهزة وتتعدّل لو احتاج
+  function sigCard(d, delay) {
+    var h = '';
+    (d.sigTitles || []).forEach(function (t, i) {
+      h += '<div class="item" data-sig="' + i + '">' +
+        '<div class="item-top"><span class="item-no">' + (i + 1) + '</span></div>' +
+        field('الوظيفة', 'sigTitles.' + i + '.ar', t.ar) +
+        field('بالإنجليزي', 'sigTitles.' + i + '.en', t.en, { ltr: true }) +
+        '</div>';
+    });
+    return h ? card('التوقيعات', h, delay) : '';
+  }
+
   function renderForm(quiet, newRow) {
     var f = state.form, d = state.data, h = '';
 
@@ -265,6 +313,7 @@
         field('ملاحظة', 'items.0.note', d.items[0].note, { area: true }) +
         field('مكان التفريغ', 'unloadPlace', d.unloadPlace) +
         field('غرض الخروج', 'purpose', d.purpose), 140);
+      h += sigCard(d, 210);
     } else {
       h += card('التصريح',
         field('رقم التصريح', 'appNo', d.appNo, { mode: 'numeric', big: true }) +
@@ -300,6 +349,7 @@
       }
       h += card('الأصناف', items, 70);
       h += driverCard(d, 140);
+      h += sigCard(d, 210);
     }
 
     // قائمة السواقين الثابتين للتلاتة الثابتين بس
@@ -316,6 +366,7 @@
 
   function addRow() {
     if (state.rows >= state.data.items.length) return;
+    state.saved = false;
     state.rows++;
     var y = window.scrollY;
     renderForm(true, state.rows - 1);
@@ -330,6 +381,7 @@
 
   // حذف صف: اللي بعده بيطلع مكانه
   function delRow(i) {
+    state.saved = false;
     state.data.items.splice(i, 1);
     state.data.items.push(emptyItem());
     state.rows--;
@@ -361,6 +413,7 @@
           try { inp.setSelectionRange(pos, pos); } catch (e) {}
         }
         AR_DIGITS.lastIndex = 0;
+        state.saved = false;
         setPath(state.data, inp.getAttribute('data-k'), inp.value);
         if (inp.type === 'date') {
           inp.parentNode.querySelector('.dv').textContent = fmtDate(inp.value);
@@ -410,6 +463,7 @@
       Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
         b.addEventListener('click', function () {
           var it = state.data.items[i];
+          state.saved = false;
           it.mode = it.mode === b.getAttribute('data-v') ? '' : b.getAttribute('data-v');
           Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) {
             x.classList.toggle('on', x.getAttribute('data-v') === it.mode);
@@ -450,7 +504,12 @@
     return enDeep({
       appNo: d.appNo, dateD: dt.d, dateM: dt.m, dateY: dt.y,
       unloadPlace: d.unloadPlace, purpose: d.purpose,
-      items: items, driver: d.driver, sigNames: []
+      items: items, driver: d.driver, sigNames: [],
+      // سطر عربي وسطر إنجليزي في نفس الخانة ، واللي يتساب فاضي مبيتكتبش
+      sigTitles: (d.sigTitles || []).map(function (t) {
+        return [String(t.ar || '').trim(), String(t.en || '').trim()]
+          .filter(function (x) { return x; }).join(NL);
+      })
     });
   }
 
@@ -637,6 +696,8 @@
         var c = state.canvas, T = window.TEMPLATES[state.sheetId || state.form.id];
         var pt = T.pt || [841.89, 595.28];
         var a4Landscape = Math.abs(pt[0] - 841.9) < 2 && Math.abs(pt[1] - 595.3) < 2;
+        rememberNo();
+        state.saved = true;
         if (kind === 'png') {
           deliver(window.pngWithDpi(c.toDataURL('image/png').split(',')[1], T.dpi || 400), fileName('png'), 'image/png');
         } else if (a4Landscape && window.AndroidBridge && window.AndroidBridge.savePdf) {
@@ -670,6 +731,7 @@
     document.body.classList.toggle('at-home', s === 'home');
     el.back.classList.toggle('hidden', s === 'home');
     el.title.textContent = s === 'home' ? 'تصاريح الخروج' : state.form.name;
+    if (s === 'preview') updateNextBtn();
     if (s === 'home') document.body.style.removeProperty('--c');
     window.scrollTo(0, 0);
   }
@@ -684,6 +746,25 @@
     show('preview');
     renderPreview();
   });
+  /* «تصريح جديد» — بيسجّل رقم التصريح ده ويفتح ورقة جديدة بالرقم اللي بعده.
+     لو الورقة لسه متحفظتش بيستنى لمسة تانية عشان اللي مكتوب ميروحش. */
+  function updateNextBtn() {
+    var decl = state.form.kind === 'decl';
+    var no = decl ? '' : bumpNo(state.data.appNo);
+    el.nextLabel.textContent = (decl ? 'إقرار جديد' : 'تصريح جديد') + (no ? ' رقم ' + no : '');
+  }
+  var nextArmed = 0;
+  el.next.addEventListener('click', function () {
+    if (!state.saved && Date.now() - nextArmed > 5000) {
+      nextArmed = Date.now();
+      toast('لسه متحفظش — دوس تاني لو عايز تبدأ واحد جديد');
+      return;
+    }
+    nextArmed = 0;
+    rememberNo();
+    openForm(state.form.id);
+  });
+
   $('btn-png').addEventListener('click', function () { exportAs('png'); });
   $('btn-pdf').addEventListener('click', function () { exportAs('pdf'); });
 
