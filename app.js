@@ -264,6 +264,7 @@
     renderForm();
     show('form');
     if (SY && f.kind !== 'decl') fillSharedNo(f, state.formSeq);
+    if (SY && f.fixed) pullFixed();          // السائق الثابت المشترك
   }
 
   function field(label, key, value, opts) {
@@ -320,33 +321,126 @@
 
   /* ============================================================
      السواقين الثابتين: الأصلي جوّه الـ APK (drivers.js)
-     ولو اتغيّر من التطبيق بيتحفظ على الموبايل ويبقى هو الثابت
+
+     لو sync.js موجود (جوّه الـ APK): السائق الثابت **مشترك بين كل الموبايلات** —
+     اللي يغيّره من زرار «حفظ كسائق ثابت» بيتغيّر عند الكل.
+     بيتقرا من السيرفر أول ما التطبيق يفتح وأول ما التصريح يتفتح ، وبيتحفظ
+     على الموبايل كـ { d: البيانات ، t: وقت آخر تغيير } — الأحدث هو اللي يكسب.
+     مفيش نت = اللي محفوظ على الموبايل شغال ، والتغيير بيتبعت أول ما النت يرجع.
+     من غير sync.js: كل موبايل لوحده (زي الأول).
      ============================================================ */
   var LS_FIXED = 'exitpermit.fixed.';
+  var LS_DPEND = 'exitpermit.drvPending';
   var DRIVER_KEYS = ['name', 'id', 'brand', 'color', 'tractor', 'trailer', 'phone'];
 
-  function fixedDriver(f) {
+  function formById(id) {
+    return window.FORMS.filter(function (x) { return x.id === id; })[0] || null;
+  }
+
+  // اللي محفوظ على الموبايل: { d: البيانات ، t: وقته } — أو null لو مفيش
+  function fixedRec(f) {
     try {
-      var s = localStorage.getItem(LS_FIXED + f.id);
-      if (s) return JSON.parse(s);
+      var o = JSON.parse(localStorage.getItem(LS_FIXED + f.id) || 'null');
+      if (o && o.d && typeof o.d === 'object') return { d: o.d, t: Number(o.t) || 0 };
+      if (o && o.name !== undefined) return { d: o, t: 0 };   // محفوظ بالشكل القديم
     } catch (e) {}
-    return f.driver;
+    return null;
+  }
+  function fixedDriver(f) {
+    var r = fixedRec(f);
+    return r ? r.d : f.driver;
+  }
+  function writeFixed(id, d, t) {
+    try {
+      localStorage.setItem(LS_FIXED + id, JSON.stringify({ d: d, t: t }));
+      return true;
+    } catch (e) { return false; }
   }
   function sameDriver(a, b) {
     return DRIVER_KEYS.every(function (k) { return String(a[k] || '').trim() === String(b[k] || '').trim(); });
   }
+  function cleanDriver(o) {
+    var d = {};
+    DRIVER_KEYS.forEach(function (k) { d[k] = String(o && o[k] != null ? o[k] : '').slice(0, 120); });
+    return d;
+  }
+
   function saveFixed() {
     var d = {};
     DRIVER_KEYS.forEach(function (k) { d[k] = toEn(String(state.data.driver[k] || '').trim()); });
-    try {
-      localStorage.setItem(LS_FIXED + state.form.id, JSON.stringify(d));
-    } catch (e) {
-      toast('مش قادر يحفظ');
-      return;
-    }
+    if (!writeFixed(state.form.id, d, Date.now())) { toast('مش قادر يحفظ'); return; }
     var b = $('btn-save-fixed');
     if (b) b.hidden = true;
+    if (!SY) { toast('اتحفظ كسائق ثابت'); return; }
     toast('اتحفظ كسائق ثابت');
+    pushFixed(state.form.id, d);
+  }
+
+  /* ---------- السائق الثابت المشترك ---------- */
+  function pushFixed(id, d) {
+    return syncCall('exitp_drv_set', { p_form: id, p_data: d }).then(function (t) {
+      if (!t) return;                       // السيرفر رفض — يفضل محفوظ على الموبايل بس
+      writeFixed(id, d, Number(t));         // وقت السيرفر هو المرجع
+      dpendDel(id);
+    }).catch(function () {
+      dpendAdd(id, d);
+      toast('مفيش نت — بيوصل للباقي أول ما النت يرجع');
+    });
+  }
+
+  /* تغييرات والنت كان قاطع — بتتبعت أول ما النت يرجع */
+  function dpendMap() { try { return JSON.parse(localStorage.getItem(LS_DPEND) || '{}') || {}; } catch (e) { return {}; } }
+  function dpendSave(m) { try { localStorage.setItem(LS_DPEND, JSON.stringify(m)); } catch (e) {} }
+  function dpendAdd(id, d) { var m = dpendMap(); m[id] = d; dpendSave(m); }
+  function dpendDel(id) { var m = dpendMap(); if (m[id]) { delete m[id]; dpendSave(m); } }
+  function dpendFlush() {
+    var m = dpendMap(), ids = Object.keys(m);
+    if (!SY || !ids.length) return Promise.resolve();
+    return ids.reduce(function (p, id) {
+      return p.then(function () {
+        return syncCall('exitp_drv_set', { p_form: id, p_data: m[id] }).then(function (t) {
+          if (t) writeFixed(id, m[id], Number(t));
+          dpendDel(id);
+        }).catch(function () {});
+      });
+    }, Promise.resolve());
+  }
+
+  var drvSeq = 0;
+  function pullFixed() {
+    if (!SY) return Promise.resolve();
+    var seq = ++drvSeq;
+    return dpendFlush().then(function () {
+      return syncCall('exitp_drv_all', {});
+    }).then(function (m) {
+      if (seq !== drvSeq || !m || typeof m !== 'object') return;
+      Object.keys(m).forEach(function (id) {
+        var f = formById(id), srv = m[id];
+        if (!f || !srv || !srv.d || typeof srv.d !== 'object') return;
+        var t = Number(srv.t) || 0, cur = fixedRec(f);
+        if (cur && cur.t >= t) return;                 // اللي عندي أحدث أو نفسه
+        var d = cleanDriver(srv.d), old = fixedDriver(f);
+        writeFixed(f.id, d, t);
+        if (!sameDriver(d, old)) applyNewFixed(f, old, d);
+      });
+    }).catch(function () {});
+  }
+
+  // لو هو واقف على نفس التصريح والبيانات لسه ما اتلمستش ، بتتحدّث قدامه
+  function applyNewFixed(f, old, d) {
+    if (state.form !== f || !state.data || !state.data.driver) return;
+    if (!sameDriver(state.data.driver, old)) return;   // كتب حاجة بإيده — متلمسهاش
+    state.data.driver = clone(d);
+    if (state.screen === 'form') {
+      DRIVER_KEYS.forEach(function (k) {
+        var box = el.form.querySelector('[data-k="driver.' + k + '"]');
+        if (box && document.activeElement !== box) box.value = d[k];
+      });
+      refreshSaveFixed();
+    } else if (state.screen === 'preview') {
+      renderPreview();
+    }
+    toast('بيانات السائق اتغيّرت من موبايل تاني');
   }
 
   function knownDrivers() {
@@ -887,4 +981,5 @@
 
   renderHome();
   show('home');
+  if (SY) pullFixed();
 })();
