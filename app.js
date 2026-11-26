@@ -691,13 +691,13 @@
     var btn = $(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
     btn.disabled = true;
     function done() { btn.disabled = false; state.busy = false; }
+    // الورقة اتحفظت فعلاً: الرقم بيتسجّل والزرار مبيسألش تاني
+    function saved() { rememberNo(); state.saved = true; }
     setTimeout(function () {
       try {
         var c = state.canvas, T = window.TEMPLATES[state.sheetId || state.form.id];
         var pt = T.pt || [841.89, 595.28];
         var a4Landscape = Math.abs(pt[0] - 841.9) < 2 && Math.abs(pt[1] - 595.3) < 2;
-        rememberNo();
-        state.saved = true;
         if (kind === 'png') {
           deliver(window.pngWithDpi(c.toDataURL('image/png').split(',')[1], T.dpi || 400), fileName('png'), 'image/png');
         } else if (a4Landscape && window.AndroidBridge && window.AndroidBridge.savePdf) {
@@ -707,10 +707,12 @@
           // الإقرارات (ورقة طولي): PDF بمقاس ورقة الورد بالظبط ومن غير ضغط
           window.makePdfLossless(c, pt[0], pt[1]).then(function (bytes) {
             deliver(window.bytesToB64(bytes), fileName('pdf'), 'application/pdf');
+            saved();
             done();
           }).catch(function () { toast('مش قادر يحفظ'); done(); });
           return;
         }
+        saved();
       } catch (e) {
         toast('مش قادر يحفظ');
       }
@@ -755,9 +757,13 @@
   }
   var nextArmed = 0;
   el.next.addEventListener('click', function () {
-    if (!state.saved && Date.now() - nextArmed > 5000) {
-      nextArmed = Date.now();
-      toast('لسه متحفظش — دوس تاني لو عايز تبدأ واحد جديد');
+    // اللمسة التانية لازم تكون مقصودة: مش لمستين ورا بعض بالغلط ، ومش بعد وقت طويل
+    var gap = Date.now() - nextArmed;
+    if (!state.saved && (gap < 400 || gap > 5000)) {
+      if (gap > 5000) {
+        nextArmed = Date.now();
+        toast('لسه متحفظش — دوس تاني لو عايز تبدأ واحد جديد');
+      }
       return;
     }
     nextArmed = 0;
