@@ -210,6 +210,8 @@
       state.data.appNo = no;
       var inp = el.form.querySelector('[data-k="appNo"]');
       if (inp && !inp.value) inp.value = no;
+      // لو كان سابق الرد وفتح الورقة ، تترسم تاني بالرقم
+      if (state.screen === 'preview') { updateNextBtn(); renderPreview(); }
     }).catch(function () {
       if (seq !== state.formSeq || state.form !== f) return;
       toast('مفيش نت — اكتب رقم التصريح بإيدك');
@@ -791,8 +793,12 @@
     var btn = $(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
     btn.disabled = true;
     function done() { btn.disabled = false; state.busy = false; }
-    // الورقة اتحفظت فعلاً: الرقم بيتسجّل والزرار مبيسألش تاني
-    function saved() { rememberNo(); state.saved = true; }
+    // الورقة اتحفظت فعلاً: دلوقتي بس الرقم بيتحسب ، والزرار بيبقى على اللي بعده
+    function saved() {
+      state.saved = true;
+      rememberNo();
+      if (state.screen === 'preview') updateNextBtn();
+    }
     setTimeout(function () {
       try {
         var c = state.canvas, T = window.TEMPLATES[state.sheetId || state.form.id];
@@ -849,11 +855,13 @@
     show('preview');
     renderPreview();
   });
-  /* «تصريح جديد» — بيسجّل رقم التصريح ده ويفتح ورقة جديدة بالرقم اللي بعده.
-     لو الورقة لسه متحفظتش بيستنى لمسة تانية عشان اللي مكتوب ميروحش. */
+  /* «تصريح جديد» — بيفتح ورقة جديدة من نفس النوع.
+     **الرقم مبيتحسبش غير لما الورقة تتحفظ** (طلب خالد) ، فلو ده لسه متحفظش
+     الورقة الجديدة بتاخد نفس الرقم ، ولو اتحفظ بتاخد اللي بعده.
+     ولو لسه متحفظش بيستنى لمسة تانية عشان اللي مكتوب ميروحش. */
   function updateNextBtn() {
     var decl = state.form.kind === 'decl';
-    var no = decl ? '' : bumpNo(state.data.appNo);
+    var no = decl ? '' : (state.saved ? bumpNo(state.data.appNo) : toEn(String(state.data.appNo || '').trim()));
     el.nextLabel.textContent = (decl ? 'إقرار جديد' : 'تصريح جديد') + (no ? ' رقم ' + no : '');
   }
   var nextArmed = 0;
@@ -868,7 +876,6 @@
       return;
     }
     nextArmed = 0;
-    rememberNo();
     openForm(state.form.id);
   });
 
