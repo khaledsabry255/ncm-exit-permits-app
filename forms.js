@@ -9,6 +9,16 @@ function driverFor(id) {
     { name: '', id: '', brand: '', color: '', tractor: '', trailer: '', phone: '' };
 }
 
+/* الوظايف اللي فيها اختيار في التوقيعات:
+   المفتاح = الوظيفة الأصلية اللي في الورق ، والقايمة = اللي ينفع يتختار مكانها.
+   اللي مش هنا بيفضل ثابت مكتوب زي ما هو. */
+window.SIG_CHOICES = {
+  'مدير الصيانة': [
+    { ar: 'مدير الصيانة', en: 'Maintenance Manager' },
+    { ar: 'مدير المخازن', en: 'Werehouse Manger' }
+  ]
+};
+
 window.FORMS = [
   {
     id: 'general',

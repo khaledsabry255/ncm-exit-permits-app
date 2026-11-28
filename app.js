@@ -465,14 +465,32 @@
   }
 
   // الوظايف اللي بتوقّع تحت التصريح: مكتوبة جاهزة وتتعدّل لو احتاج
+  /* الوظايف اللي بتوقّع: كلها ثابتة ، إلا اللي ليها اختيار في SIG_CHOICES
+     (مدير الصيانة ← أو مدير المخازن) بتبقى قائمة بسهم */
+  function sigOpts(i) {
+    var def = ((state.form.sigTitles || [])[i] || {}).ar || '';
+    return (window.SIG_CHOICES || {})[def] || null;
+  }
+
   function sigCard(d, delay) {
     var h = '';
     (d.sigTitles || []).forEach(function (t, i) {
+      var opts = sigOpts(i), body;
+      if (opts) {
+        body = '<div class="f"><label>الوظيفة</label><select data-k="sigTitles.' + i + '.ar">' +
+          opts.map(function (o) {
+            return '<option value="' + esc(o.ar) + '"' +
+              (o.ar === t.ar ? ' selected' : '') + '>' + esc(o.ar) + '</option>';
+          }).join('') +
+          '</select></div>' +
+          '<div class="sigv"><span class="sig-en" data-en="' + i + '">' + esc(t.en) + '</span></div>';
+      } else {
+        body = '<div class="sigv"><b>' + esc(t.ar) + '</b>' +
+          '<span class="sig-en">' + esc(t.en) + '</span></div>';
+      }
       h += '<div class="item" data-sig="' + i + '">' +
         '<div class="item-top"><span class="item-no">' + (i + 1) + '</span></div>' +
-        field('الوظيفة', 'sigTitles.' + i + '.ar', t.ar) +
-        field('بالإنجليزي', 'sigTitles.' + i + '.en', t.en, { ltr: true }) +
-        '</div>';
+        body + '</div>';
     });
     return h ? card('التوقيعات', h, delay) : '';
   }
@@ -629,6 +647,22 @@
       });
     });
 
+    // قائمة الوظيفة: لما تتغيّر ، الإنجليزي اللي تحتها يتغيّر معاها
+    Array.prototype.forEach.call(el.form.querySelectorAll('select[data-k]'), function (sel) {
+      sel.addEventListener('change', function () {
+        var k = sel.getAttribute('data-k'), p = k.split('.');
+        if (p[0] !== 'sigTitles' || p[2] !== 'ar') return;
+        var i = +p[1], hit = (sigOpts(i) || []).filter(function (o) {
+          return o.ar === sel.value;
+        })[0];
+        if (!hit) return;
+        state.saved = false;
+        state.data.sigTitles[i].en = hit.en;
+        var box = el.form.querySelector('[data-en="' + i + '"]');
+        if (box) box.textContent = hit.en;
+      });
+    });
+
     // اختيار سائق معروف من القائمة بيملا باقي بياناته
     var nameInp = el.form.querySelector('[data-k="driver.name"][list]');
     if (nameInp) nameInp.addEventListener('change', function () {
@@ -674,6 +708,17 @@
   /* ============================================================
      الورقة
      ============================================================ */
+  /* معلومات النقل: أي خانة متسابة فاضية بيتكتب فيها «لا يوجد» (طلب خالد)
+     ده على الورقة بس — الصناديق في التطبيق بتفضل فاضية زي ما هي */
+  var NONE = 'لا يوجد';
+  function transport(dr) {
+    var out = {};
+    DRIVER_KEYS.forEach(function (k) {
+      out[k] = String(dr[k] == null ? '' : dr[k]).trim() || NONE;
+    });
+    return out;
+  }
+
   function sheetData() {
     var f = state.form, d = state.data, dt = splitISO(d.date) || { d: '', m: '', y: '' };
     if (f.kind === 'decl') {
@@ -701,7 +746,7 @@
     return enDeep({
       appNo: d.appNo, dateD: dt.d, dateM: dt.m, dateY: dt.y,
       unloadPlace: d.unloadPlace, purpose: d.purpose,
-      items: items, driver: d.driver, sigNames: [],
+      items: items, driver: transport(d.driver), sigNames: [],
       // سطر عربي وسطر إنجليزي في نفس الخانة ، واللي يتساب فاضي مبيتكتبش
       sigTitles: (d.sigTitles || []).map(function (t) {
         return [String(t.ar || '').trim(), String(t.en || '').trim()]
