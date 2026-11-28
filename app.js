@@ -221,11 +221,11 @@
   // قبل ما الورقة تتعرض: لو حد تاني اخد الرقم ده ، الرقم بيتصحّح
   function refreshNoIfTaken() {
     var f = state.form;
-    if (!SY || !f || f.kind === 'decl' || state.saved) return;
+    if (!SY || !f || f.kind === 'decl' || state.saved) return Promise.resolve();
     var no = toEn(String(state.data.appNo || '').trim());
-    if (!/\d/.test(no) || no === state.claimed) return;
+    if (!/\d/.test(no) || no === state.claimed) return Promise.resolve();
     var seq = state.formSeq;
-    syncCall('exitp_no_get', { p_form: f.id }).then(function (last) {
+    return syncCall('exitp_no_get', { p_form: f.id }).then(function (last) {
       if (seq !== state.formSeq || state.form !== f || state.saved) return;
       if (last === null || last === undefined || last === '') return;
       var mine = noVal(no), theirs = noVal(String(last));
@@ -882,18 +882,20 @@
     toast('اتحفظ');
   }
 
+  // الورقة اتحفظت فعلاً: دلوقتي بس الرقم بيتحسب ، والزرار بيبقى على اللي بعده
+  function markSaved() {
+    state.saved = true;
+    rememberNo();
+    if (state.screen === 'preview') updateNextBtn();
+  }
+
   function exportAs(kind) {
     if (state.busy || !state.canvas) return;
     state.busy = true;
     var btn = $(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
     btn.disabled = true;
     function done() { btn.disabled = false; state.busy = false; }
-    // الورقة اتحفظت فعلاً: دلوقتي بس الرقم بيتحسب ، والزرار بيبقى على اللي بعده
-    function saved() {
-      state.saved = true;
-      rememberNo();
-      if (state.screen === 'preview') updateNextBtn();
-    }
+    var saved = markSaved;
     setTimeout(function () {
       try {
         var c = state.canvas, T = window.TEMPLATES[state.sheetId || state.form.id];
@@ -937,6 +939,7 @@
     if (s === 'preview') updateNextBtn();
     if (s === 'home') document.body.style.removeProperty('--c');
     window.scrollTo(0, 0);
+    if (window.__onShow) window.__onShow(s);   // نسخة الكمبيوتر (pc.js) — مفيش حاجة على الموبايل
   }
 
   el.back.addEventListener('click', function () {
@@ -979,6 +982,23 @@
 
   /* للاختبار من الكمبيوتر */
   window.__state = state;
+
+  /* نسخة الكمبيوتر (pc.html + pc.js) بتشتغل بنفس الكود ده بالظبط —
+     دي الدوال اللي بتناديها بس ، وملهاش أي أثر على الموبايل */
+  window.__api = {
+    state: state,
+    show: show,
+    openForm: openForm,
+    renderHome: renderHome,
+    renderForm: renderForm,
+    renderPreview: renderPreview,
+    exportAs: exportAs,
+    refreshNoIfTaken: refreshNoIfTaken,
+    updateNextBtn: updateNextBtn,
+    markSaved: markSaved,
+    fileName: fileName,
+    toast: toast
+  };
 
   renderHome();
   show('home');
