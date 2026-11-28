@@ -15,7 +15,7 @@ function driverFor(id) {
 window.SIG_CHOICES = {
   'مدير الصيانة': [
     { ar: 'مدير الصيانة', en: 'Maintenance Manager' },
-    { ar: 'مدير المخازن', en: 'Werehouse Manger' }
+    { ar: 'مدير المخازن', en: 'Warehouse Manager' }
   ]
 };
 
